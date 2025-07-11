@@ -1,14 +1,14 @@
 /**:
     ros__parameters:
-      video_device: "/dev/video0"  # USB camera device
+      video_device: "/dev/jetcocam0"
       framerate: 30.0
       io_method: "mmap"
       frame_id: "jetcocam"
-      pixel_format: "mjpeg2rgb"  # see usb_cam/supported>
-      av_device_format: "RGB24"
-      image_width: 1920
-      image_height: 1080
-      camera_name: "test_camera"
+      pixel_format: "yuyv"  # see usb_cam/supported>
+      av_device_format: "YUV422P"
+      image_width: 640
+      image_height: 480
+      camera_name: "jetcocam"
       # camera_info_url: "package://usb_cam/config/ca>
       camera_info_url: "package://jetcobot_bringup/config/jetcocam_1_calib.yaml"
       brightness: -1
