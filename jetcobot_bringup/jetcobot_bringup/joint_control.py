@@ -8,7 +8,7 @@ import pymycobot
 from packaging import version
 
 # min low version require
-MAX_REQUIRE_VERSION = '3.5.3'
+# MAX_REQUIRE_VERSION = '3.5.3'
 
 from pymycobot import MyCobot
     
@@ -29,53 +29,30 @@ class Slider_Subscriber(Node):
             self.gripper_callback,
             1
         )
+        self.sub_get_angles_cmd = self.create_subscription(
+            Bool,
+            "get_angles_cmd",
+            self.get_radians_cmd_callback,
+            1
+        )
 
         self.pub = self.create_publisher(JointState, "real_joint_states", 1)
 
-        self.joint_state = JointState()
-
         self.last_gripper_command = None
         self.gripper_command = None
-
-        # Create timer to publish joint states at 30Hz
-        # self.timer = self.create_timer(1.0/5.0, self.publish_joint_states)
 
         self.mc = MyCobot("/dev/ttyJETCOBOT", 1000000)
         time.sleep(0.05)
         self.mc.set_fresh_mode(1)
         time.sleep(0.05)
 
-
-
     def listener_callback(self, msg):
-
         data_list = []
         for _, value in enumerate(msg.position):
             radians_to_angles = round(math.degrees(value), 2)
             data_list.append(radians_to_angles)
-            
-        # print('data_list: {}'.format(data_list))
-
         self.mc.send_angles(data_list, 100)
-        # angles = self.mc.get_angles()
-        # if angles is not None:
-        #     self.joint_state.position = angles
         
-        # if self.gripper_command is not None:
-        #     if self.last_gripper_command != self.gripper_command:
-        #         #sleep for gripper command to take effect
-        #         time.sleep(1.0)
-        #         if self.gripper_command == 0:
-        #             self.mc.set_gripper_state(0, 30,3)
-        #             self.get_logger().info("Gripper command: Open")
-        #         elif self.gripper_command == 1:
-        #             self.mc.set_gripper_state(1, 30,3)
-        #             self.get_logger().info("Gripper command: Close")
-        #         self.last_gripper_command = self.gripper_command
-        #         time.sleep(1.0)
-
-        
-    
     def gripper_callback(self, msg):
         self.gripper_command = int(msg.data)
         time.sleep(0.1)
@@ -85,10 +62,18 @@ class Slider_Subscriber(Node):
         self.get_logger().info(f"Gripper command: {int(msg.data)}")
         
 
-
-    def publish_joint_states(self):
-        self.joint_state.header.stamp = self.get_clock().now().to_msg()
-        self.joint_state.name = [
+    def get_radians_cmd_callback(self,_):
+        joint_state = JointState()
+        time.sleep(0.25)
+        angles = self.mc.get_radians()
+        
+        if angles is not None:
+            joint_state.position = angles
+        else:
+            joint_state.position = [0.0] * len(joint_state.name)
+        
+        joint_state.header.stamp = self.get_clock().now().to_msg()
+        joint_state.name = [
             "link2_to_link1",
             "link3_to_link2",
             "link4_to_link3",
@@ -96,9 +81,10 @@ class Slider_Subscriber(Node):
             "link6_to_link5",
             "link6output_to_link6",
         ]
-        self.joint_state.velocity = [0.0] * len(self.joint_state.name)
-        self.joint_state.effort = [0.0] * len(self.joint_state.name)
-        self.pub.publish(self.joint_state)
+        joint_state.velocity = [0.0] * len(joint_state.name)
+        joint_state.effort = [0.0] * len(joint_state.name)
+        self.pub.publish(joint_state)
+        time.sleep(0.25)
 
 
 def main(args=None):
