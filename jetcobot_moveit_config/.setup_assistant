@@ -1,0 +1,25 @@
+moveit_setup_assistant_config:
+  urdf:
+    package: jetcobot_description
+    relative_path: urdf/mycobot_280_m5/mycobot_280m5_with_gripper_parallel.urdf
+  srdf:
+    relative_path: config/firefighter.srdf
+  package_settings:
+    author_name: Jinseok Kim
+    author_email: jinseok.kim970@gmail.com
+    generated_timestamp: 1752220991
+  control_xacro:
+    command:
+      - position
+    state:
+      - position
+      - velocity
+  modified_urdf:
+    xacros:
+      - control_xacro
+  control_xacro:
+    command:
+      - position
+    state:
+      - position
+      - velocity
