@@ -1,0 +1,45 @@
+image_width: 640
+image_height: 480
+camera_name: jetcocam_2
+camera_matrix:
+  rows: 3
+  cols: 3
+  data: [978.548555, 0.0, 293.112691,0.0, 981.781244, 163.100487,0.0, 0.0, 1.0]
+distortion_coefficients:
+  rows: 1
+  cols: 5
+  data: [-0.481485, 0.586547, -0.000026, 0.005891, 0.0]
+rectification_matrix:
+  rows: 3
+  cols: 3
+  data: [1.000000, 0.000000, 0.000000,0.000000, 1.000000, 0.000000,0.000000, 0.000000, 1.000000]
+projection_matrix:
+  rows: 3
+  cols: 4
+  data: [929.733459, 0.0, 292.400013, 0.0,0.0, 944.340027,158.975461, 0.0, 0.0, 0.0, 1.0, 0.0]
+
+# camera_matrix:
+#   rows: 3
+#   cols: 3
+#   data: [1.0, 0.0, 0.0,
+#          0.0, 1.0, 0.0,
+#          0.0, 0.0, 1.0]
+
+# distortion_coefficients:
+#   rows: 1
+#   cols: 5
+#   data: [0.0, 0.0, 0.0, 0.0, 0.0]
+
+# rectification_matrix:
+#   rows: 3
+#   cols: 3
+#   data: [1.0, 0.0, 0.0,
+#          0.0, 1.0, 0.0,
+#          0.0, 0.0, 1.0]
+
+# projection_matrix:
+#   rows: 3
+#   cols: 4
+#   data: [1.0, 0.0, 0.0, 0.0,
+#          0.0, 1.0, 0.0, 0.0,
+#          0.0, 0.0, 1.0, 0.0]
