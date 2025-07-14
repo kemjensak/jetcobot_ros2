@@ -86,11 +86,11 @@ class Joint_controller(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    Joint_controller = Joint_controller()
+    joint_controller = Joint_controller()
 
-    rclpy.spin(Joint_controller)
+    rclpy.spin(joint_controller)
     
-    Joint_controller.destroy_node()
+    joint_controller.destroy_node()
     rclpy.shutdown()
 
 

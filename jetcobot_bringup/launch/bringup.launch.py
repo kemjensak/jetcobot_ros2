@@ -12,17 +12,6 @@ from launch.substitutions import Command, LaunchConfiguration, PathJoinSubstitut
 
 
 def generate_launch_description():
-    res = []
-
-    model_launch_arg = DeclareLaunchArgument(
-        "model",
-        default_value=os.path.join(
-            get_package_share_directory("mycobot_description"),
-            "urdf/mycobot_280_pi/mycobot_280_pi.urdf"
-        )
-    )
-    res.append(model_launch_arg)
-    
     joint_control_node = Node(
         package="jetcobot_bringup",
         executable="joint_control",
