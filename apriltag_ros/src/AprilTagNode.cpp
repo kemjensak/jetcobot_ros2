@@ -88,7 +88,6 @@ private:
     cv::VideoCapture camera;
     std::thread camera_thread;
     std::atomic<bool> running;
-    std::atomic<bool> camera_resolution_set;
     sensor_msgs::msg::CameraInfo::SharedPtr camera_info;
     
     const rclcpp::Publisher<apriltag_msgs::msg::AprilTagDetectionArray>::SharedPtr pub_detections;
@@ -113,7 +112,6 @@ AprilTagNode::AprilTagNode(const rclcpp::NodeOptions& options)
     cb_parameter(add_on_set_parameters_callback(std::bind(&AprilTagNode::onParameter, this, std::placeholders::_1))),
     td(apriltag_detector_create()),
     running(false),
-    camera_resolution_set(false),
     // topics
     pub_detections(create_publisher<apriltag_msgs::msg::AprilTagDetectionArray>("detections", rclcpp::QoS(1))),
     sub_camera_info(create_subscription<sensor_msgs::msg::CameraInfo>(
@@ -128,6 +126,10 @@ AprilTagNode::AprilTagNode(const rclcpp::NodeOptions& options)
     
     // Camera device parameter - can be device path (e.g., "/dev/jetcocam0") or index (e.g., "0")
     std::string camera_device_str = declare_parameter("camera_device", "/dev/jetcocam0", descr("camera device path or index", true));
+    
+    // Camera resolution parameters
+    int camera_width = declare_parameter("camera_width", 1920, descr("camera width", true));
+    int camera_height = declare_parameter("camera_height", 1080, descr("camera height", true));
 
     // get tag names, IDs and sizes
     const auto ids = declare_parameter("tag.ids", std::vector<int64_t>{}, descr("tag ids", true));
@@ -213,6 +215,16 @@ AprilTagNode::AprilTagNode(const rclcpp::NodeOptions& options)
         RCLCPP_ERROR(get_logger(), "Failed to open camera device: %s", camera_device_str.c_str());
         throw std::runtime_error("Failed to open camera device: " + camera_device_str);
     }
+
+    // Set camera resolution
+    camera.set(cv::CAP_PROP_FRAME_WIDTH, camera_width);
+    camera.set(cv::CAP_PROP_FRAME_HEIGHT, camera_height);
+    
+    // Verify resolution was set
+    int actual_width = static_cast<int>(camera.get(cv::CAP_PROP_FRAME_WIDTH));
+    int actual_height = static_cast<int>(camera.get(cv::CAP_PROP_FRAME_HEIGHT));
+    RCLCPP_INFO(get_logger(), "Camera resolution set to: %dx%d (requested: %dx%d)", 
+                actual_width, actual_height, camera_width, camera_height);
 
     // Start camera thread
     running = true;
@@ -352,20 +364,6 @@ void AprilTagNode::processFrame(const cv::Mat& frame)
 void AprilTagNode::onCameraInfo(const sensor_msgs::msg::CameraInfo::SharedPtr msg)
 {
     camera_info = msg;
-    
-    // Set camera resolution only once when camera_info is first received
-    if (!camera_resolution_set && camera.isOpened() && msg->width > 0 && msg->height > 0) {
-        camera.set(cv::CAP_PROP_FRAME_WIDTH, msg->width);
-        camera.set(cv::CAP_PROP_FRAME_HEIGHT, msg->height);
-        
-        // Verify resolution was set
-        int actual_width = static_cast<int>(camera.get(cv::CAP_PROP_FRAME_WIDTH));
-        int actual_height = static_cast<int>(camera.get(cv::CAP_PROP_FRAME_HEIGHT));
-        RCLCPP_INFO(get_logger(), "Camera resolution set to: %dx%d (requested from camera_info: %dx%d)", 
-                    actual_width, actual_height, msg->width, msg->height);
-        
-        camera_resolution_set = true;
-    }
 }
 
 rcl_interfaces::msg::SetParametersResult
