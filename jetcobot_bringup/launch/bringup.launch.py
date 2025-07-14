@@ -41,7 +41,7 @@ def generate_launch_description():
         name="apriltag_node",
         output="screen",
         parameters=[PathJoinSubstitution([
-                FindPackageShare('jetcobot_bringup'), 'config', 'tags_36h11.yaml'])
+                FindPackageShare('apriltag_ros'), 'config', 'tags_36h11.yaml'])
         ],
         remappings=[
             ('camera_info', '/camera_info'),
