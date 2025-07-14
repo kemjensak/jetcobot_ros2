@@ -88,6 +88,8 @@ private:
     cv::VideoCapture camera;
     std::thread camera_thread;
     std::atomic<bool> running;
+    std::atomic<bool> camera_resolution_set;
+    std::string camera_device_str;
     sensor_msgs::msg::CameraInfo::SharedPtr camera_info;
     
     const rclcpp::Publisher<apriltag_msgs::msg::AprilTagDetectionArray>::SharedPtr pub_detections;
@@ -112,6 +114,7 @@ AprilTagNode::AprilTagNode(const rclcpp::NodeOptions& options)
     cb_parameter(add_on_set_parameters_callback(std::bind(&AprilTagNode::onParameter, this, std::placeholders::_1))),
     td(apriltag_detector_create()),
     running(false),
+    camera_resolution_set(false),
     // topics
     pub_detections(create_publisher<apriltag_msgs::msg::AprilTagDetectionArray>("detections", rclcpp::QoS(1))),
     sub_camera_info(create_subscription<sensor_msgs::msg::CameraInfo>(
@@ -125,11 +128,7 @@ AprilTagNode::AprilTagNode(const rclcpp::NodeOptions& options)
     tag_edge_size = declare_parameter("size", 1.0, descr("default tag size", true));
     
     // Camera device parameter - can be device path (e.g., "/dev/jetcocam0") or index (e.g., "0")
-    std::string camera_device_str = declare_parameter("camera_device", "/dev/jetcocam0", descr("camera device path or index", true));
-    
-    // Camera resolution parameters
-    int camera_width = declare_parameter("camera_width", 1920, descr("camera width", true));
-    int camera_height = declare_parameter("camera_height", 1080, descr("camera height", true));
+    camera_device_str = declare_parameter("camera_device", "/dev/jetcocam0", descr("camera device path or index", true));
 
     // get tag names, IDs and sizes
     const auto ids = declare_parameter("tag.ids", std::vector<int64_t>{}, descr("tag ids", true));
@@ -187,50 +186,14 @@ AprilTagNode::AprilTagNode(const rclcpp::NodeOptions& options)
         throw std::runtime_error("Unsupported tag family: " + tag_family);
     }
 
-    // Initialize camera
-    // Try to parse as integer first (for device index), otherwise use as device path
-    bool camera_opened = false;
-    try {
-        // Try to parse as integer
-        int device_index = std::stoi(camera_device_str);
-        camera.open(device_index);
-        if (camera.isOpened()) {
-            camera_opened = true;
-            RCLCPP_INFO(get_logger(), "Opened camera device by index: %d", device_index);
-        }
-    } catch (const std::exception&) {
-        // Not a valid integer, treat as device path
-    }
+    // Camera will be initialized when camera_info is received
+    RCLCPP_INFO(get_logger(), "Waiting for camera_info to initialize camera...");
     
-    if (!camera_opened) {
-        // Try to open as device path
-        camera.open(camera_device_str);
-        if (camera.isOpened()) {
-            camera_opened = true;
-            RCLCPP_INFO(get_logger(), "Opened camera device by path: %s", camera_device_str.c_str());
-        }
-    }
-    
-    if (!camera_opened) {
-        RCLCPP_ERROR(get_logger(), "Failed to open camera device: %s", camera_device_str.c_str());
-        throw std::runtime_error("Failed to open camera device: " + camera_device_str);
-    }
-
-    // Set camera resolution
-    camera.set(cv::CAP_PROP_FRAME_WIDTH, camera_width);
-    camera.set(cv::CAP_PROP_FRAME_HEIGHT, camera_height);
-    
-    // Verify resolution was set
-    int actual_width = static_cast<int>(camera.get(cv::CAP_PROP_FRAME_WIDTH));
-    int actual_height = static_cast<int>(camera.get(cv::CAP_PROP_FRAME_HEIGHT));
-    RCLCPP_INFO(get_logger(), "Camera resolution set to: %dx%d (requested: %dx%d)", 
-                actual_width, actual_height, camera_width, camera_height);
-
-    // Start camera thread
+    // Start camera thread (it will wait for camera to be opened)
     running = true;
     camera_thread = std::thread(&AprilTagNode::cameraLoop, this);
     
-    RCLCPP_INFO(get_logger(), "AprilTag detector started with camera device: %s", camera_device_str.c_str());
+    RCLCPP_INFO(get_logger(), "AprilTag detector created, waiting for camera_info");
 }
 
 AprilTagNode::~AprilTagNode()
@@ -255,6 +218,12 @@ void AprilTagNode::cameraLoop()
     cv::Mat frame;
     
     while (running && rclcpp::ok()) {
+        if (!camera.isOpened()) {
+            // Camera not opened yet, wait
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            continue;
+        }
+        
         if (!camera.read(frame)) {
             RCLCPP_WARN(get_logger(), "Failed to read frame from camera");
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
@@ -273,6 +242,12 @@ void AprilTagNode::processFrame(const cv::Mat& frame)
 {
     if (!camera_info) {
         RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 5000, "No camera info received yet");
+        return;
+    }
+    
+    // Wait for camera resolution to be set from camera_info
+    if (!camera_resolution_set) {
+        RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 5000, "Waiting for camera resolution to be set from camera_info");
         return;
     }
 
@@ -364,6 +339,50 @@ void AprilTagNode::processFrame(const cv::Mat& frame)
 void AprilTagNode::onCameraInfo(const sensor_msgs::msg::CameraInfo::SharedPtr msg)
 {
     camera_info = msg;
+    
+    // Initialize camera only once when camera_info is first received
+    if (!camera_resolution_set && !camera.isOpened() && msg->width > 0 && msg->height > 0) {
+        // Try to open camera
+        bool camera_opened = false;
+        try {
+            // Try to parse as integer first (for device index)
+            int device_index = std::stoi(camera_device_str);
+            camera.open(device_index);
+            if (camera.isOpened()) {
+                camera_opened = true;
+                RCLCPP_INFO(get_logger(), "Opened camera device by index: %d", device_index);
+            }
+        } catch (const std::exception&) {
+            // Not a valid integer, treat as device path
+        }
+        
+        if (!camera_opened) {
+            // Try to open as device path
+            camera.open(camera_device_str);
+            if (camera.isOpened()) {
+                camera_opened = true;
+                RCLCPP_INFO(get_logger(), "Opened camera device by path: %s", camera_device_str.c_str());
+            }
+        }
+        
+        if (!camera_opened) {
+            RCLCPP_ERROR(get_logger(), "Failed to open camera device: %s", camera_device_str.c_str());
+            return;
+        }
+        
+        // Set camera resolution from camera_info
+        camera.set(cv::CAP_PROP_FRAME_WIDTH, msg->width);
+        camera.set(cv::CAP_PROP_FRAME_HEIGHT, msg->height);
+        
+        // Verify resolution was set
+        int actual_width = static_cast<int>(camera.get(cv::CAP_PROP_FRAME_WIDTH));
+        int actual_height = static_cast<int>(camera.get(cv::CAP_PROP_FRAME_HEIGHT));
+        RCLCPP_INFO(get_logger(), "Camera resolution set to: %dx%d (requested from camera_info: %dx%d)", 
+                    actual_width, actual_height, msg->width, msg->height);
+        
+        camera_resolution_set = true;
+        RCLCPP_INFO(get_logger(), "AprilTag detector started with camera device: %s", camera_device_str.c_str());
+    }
 }
 
 rcl_interfaces::msg::SetParametersResult
