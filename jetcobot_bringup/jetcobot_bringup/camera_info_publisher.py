@@ -6,6 +6,7 @@ from sensor_msgs.msg import CameraInfo
 import yaml
 import os
 from pathlib import Path
+from ament_index_python.packages import get_package_share_directory
 
 
 class CameraInfoPublisher(Node):
@@ -30,6 +31,10 @@ class CameraInfoPublisher(Node):
         # Load camera info
         self.camera_info_msg = self.load_camera_info(camera_info_url)
         
+        if self.camera_info_msg is None:
+            self.get_logger().error('Failed to load camera info. Exiting.')
+            raise RuntimeError('Camera info loading failed')
+        
         # Create timer
         self.timer = self.create_timer(1.0 / publish_rate, self.publish_camera_info)
         
@@ -41,8 +46,8 @@ class CameraInfoPublisher(Node):
         camera_info = CameraInfo()
         
         if not camera_info_url:
-            self.get_logger().warn('No camera_info_url provided, using default values')
-            return self.get_default_camera_info()
+            self.get_logger().error('No camera_info_url provided')
+            return None
         
         # Handle package:// URLs
         if camera_info_url.startswith('package://'):
@@ -50,29 +55,24 @@ class CameraInfoPublisher(Node):
             parts = camera_info_url[10:].split('/', 1)
             if len(parts) != 2:
                 self.get_logger().error(f'Invalid package URL: {camera_info_url}')
-                return self.get_default_camera_info()
+                return None
             
             package_name, relative_path = parts
             
-            # Try to find the package path (simplified approach)
-            # In a real implementation, you might want to use ament_index_python
-            possible_paths = [
-                f'/home/addinedu/colcon_ws/src/jetcobot/{package_name}/{relative_path}',
-                f'/opt/ros/humble/share/{package_name}/{relative_path}'
-            ]
-            
-            file_path = None
-            for path in possible_paths:
-                if os.path.exists(path):
-                    file_path = path
-                    break
+            try:
+                # Use ament_index_python to find package share directory
+                package_share_dir = get_package_share_directory(package_name)
+                file_path = os.path.join(package_share_dir, relative_path)
+            except Exception as e:
+                self.get_logger().error(f'Failed to find package {package_name}: {str(e)}')
+                return None
         else:
             # Direct file path
             file_path = camera_info_url
         
         if not file_path or not os.path.exists(file_path):
             self.get_logger().error(f'Camera info file not found: {camera_info_url}')
-            return self.get_default_camera_info()
+            return None
         
         try:
             with open(file_path, 'r') as f:
@@ -105,26 +105,25 @@ class CameraInfoPublisher(Node):
             
         except Exception as e:
             self.get_logger().error(f'Failed to load camera info: {str(e)}')
+            return None
         
         return camera_info
     
     
     def publish_camera_info(self):
         """Publish camera info message"""
-        self.camera_info_msg.header.stamp = self.get_clock().now().to_msg()
-        self.camera_info_pub.publish(self.camera_info_msg)
-
-
+        if self.camera_info_msg is not None:
+            self.camera_info_msg.header.stamp = self.get_clock().now().to_msg()
+            self.camera_info_pub.publish(self.camera_info_msg)
 def main(args=None):
     rclpy.init(args=args)
-    node = CameraInfoPublisher()
     
     try:
+        node = CameraInfoPublisher()
         rclpy.spin(node)
-    except KeyboardInterrupt:
+    except (KeyboardInterrupt, RuntimeError):
         pass
     finally:
-        node.destroy_node()
         rclpy.shutdown()
 
 
