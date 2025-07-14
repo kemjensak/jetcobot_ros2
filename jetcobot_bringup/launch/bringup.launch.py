@@ -5,10 +5,11 @@ from launch_ros.actions import Node
 from launch_ros.parameter_descriptions import ParameterValue
 
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
 from launch.conditions import IfCondition, UnlessCondition
 from launch_ros.substitutions import FindPackageShare
 from launch.substitutions import Command, LaunchConfiguration, PathJoinSubstitution
+from launch.launch_description_sources import PythonLaunchDescriptionSource
 
 
 def generate_launch_description():
@@ -19,19 +20,19 @@ def generate_launch_description():
         output="screen"
     )
 
-    jetcocam_node = Node(
-        package="usb_cam",
-        executable="usb_cam_node_exe",
-        name="usb_cam_node",
-        output="screen",
-        parameters=[PathJoinSubstitution([
-            FindPackageShare('jetcobot_bringup'), 'config', 'jetcocam_1_param.yaml'])
-        ],
-        remappings=[
-            ('image_raw', '/jetcocam/image_raw'),
-            ('image_raw/compressed', 'jetcocam/image_compressed'),
-            ('camera_info', '/jetcocam/camera_info'),
-        ],
+    # Include camera_info_publisher launch file
+    camera_info_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource([
+            PathJoinSubstitution([
+                FindPackageShare('jetcobot_bringup'),
+                'launch',
+                'camera_info_publisher.launch.py'
+            ])
+        ]),
+        launch_arguments={
+            'camera_name': 'jetcocam',
+            'frame_id': 'camera_optical_frame'
+        }.items()
     )
 
     apriltag_ros_node = Node(
@@ -43,15 +44,14 @@ def generate_launch_description():
                 FindPackageShare('jetcobot_bringup'), 'config', 'tags_36h11.yaml'])
         ],
         remappings=[
-            ('image_rect', '/jetcocam/image_raw'),
-            ('camera_info', '/jetcocam/camera_info'),
+            ('camera_info', '/camera_info'),
         ],
     )
 
     return LaunchDescription(
         [
             joint_control_node,
-            jetcocam_node,
+            camera_info_launch,
             apriltag_ros_node,
         ]
     )
