@@ -7,13 +7,10 @@ import math
 import pymycobot
 from packaging import version
 
-# min low version require
 # MAX_REQUIRE_VERSION = '3.5.3'
-
 from pymycobot import MyCobot
     
-
-class Slider_Subscriber(Node):
+class Joint_controller(Node):
     def __init__(self):
         super().__init__("control_slider")
         self.subscription = self.create_subscription(
@@ -89,11 +86,11 @@ class Slider_Subscriber(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    slider_subscriber = Slider_Subscriber()
+    Joint_controller = Joint_controller()
 
-    rclpy.spin(slider_subscriber)
+    rclpy.spin(Joint_controller)
     
-    slider_subscriber.destroy_node()
+    Joint_controller.destroy_node()
     rclpy.shutdown()
 
 
