@@ -26,6 +26,7 @@ setup(
     entry_points={
         'console_scripts': [
             'joint_control = jetcobot_bringup.joint_control:main',
+            'camera_info_publisher = jetcobot_bringup.camera_info_publisher:main',
         ],
     },
 )
