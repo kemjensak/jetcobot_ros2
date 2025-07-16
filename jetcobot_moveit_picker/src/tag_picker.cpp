@@ -1,39 +1,3 @@
-/*********************************************************************
- * Software License Agreement (BSD License)
- *
- *  Copyright (c) 2012, Willow Garage, Inc.
- *  All rights reserved.
- *
- *  Redistribution and use in source and binary forms, with or without
- *  modification, are permitted provided that the following conditions
- *  are met:
- *
- *   * Redistributions of source code must retain the above copyright
- *     notice, this list of conditions and the following disclaimer.
- *   * Redistributions in binary form must reproduce the above
- *     copyright notice, this list of conditions and the following
- *     disclaimer in the documentation and/or other materials provided
- *     with the distribution.
- *   * Neither the name of Willow Garage nor the names of its
- *     contributors may be used to endorse or promote products derived
- *     from this software without specific prior written permission.
- *
- *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- *  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- *  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- *  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- *  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- *  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
- *  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- *  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- *  POSSIBILITY OF SUCH DAMAGE.
- *********************************************************************/
-
-/* Author: Sachin Chitta, Michael Lautman */
-
 #include <pluginlib/class_loader.hpp>
 
 // MoveIt
@@ -46,60 +10,36 @@
 #include <moveit_visual_tools/moveit_visual_tools.h>
 #include <moveit/move_group_interface/move_group_interface.hpp>
 
-static const rclcpp::Logger LOGGER = rclcpp::get_logger("motion_planning_api_tutorial");
+static const rclcpp::Logger LOGGER = rclcpp::get_logger("tag_picker");
 
 int main(int argc, char** argv)
 {
   rclcpp::init(argc, argv);
   rclcpp::NodeOptions node_options;
   node_options.automatically_declare_parameters_from_overrides(true);
-  std::shared_ptr<rclcpp::Node> motion_planning_api_tutorial_node =
-      rclcpp::Node::make_shared("motion_planning_api_tutorial", node_options);
+  std::shared_ptr<rclcpp::Node> tag_picker_node =
+      rclcpp::Node::make_shared("tag_picker", node_options);
 
   rclcpp::executors::SingleThreadedExecutor executor;
-  executor.add_node(motion_planning_api_tutorial_node);
+  executor.add_node(tag_picker_node);
   std::thread([&executor]() { executor.spin(); }).detach();
 
-  // BEGIN_TUTORIAL
-  // Start
-  // ^^^^^
-  // Setting up to start using a planner is pretty easy. Planners are
-  // setup as plugins in MoveIt and you can use the ROS pluginlib
-  // interface to load any planner that you want to use. Before we can
-  // load the planner, we need two objects, a RobotModel and a
-  // PlanningScene. We will start by instantiating a
-  // :moveit_codedir:`RobotModelLoader<moveit_ros/planning/robot_model_loader/include/moveit/robot_model_loader/robot_model_loader.hpp>`
-  // object, which will look up the robot description on the ROS
-  // parameter server and construct a
-  // :moveit_codedir:`RobotModel<moveit_core/robot_model/include/moveit/robot_model/robot_model.hpp>`
-  // for us to use.
   const std::string PLANNING_GROUP = "arm";
-  robot_model_loader::RobotModelLoader robot_model_loader(motion_planning_api_tutorial_node, "robot_description");
+  robot_model_loader::RobotModelLoader robot_model_loader(tag_picker_node, "robot_description");
   const moveit::core::RobotModelPtr& robot_model = robot_model_loader.getModel();
-  /* Create a RobotState and JointModelGroup to keep track of the current robot pose and planning group*/
   moveit::core::RobotStatePtr robot_state(new moveit::core::RobotState(robot_model));
   const moveit::core::JointModelGroup* joint_model_group = robot_state->getJointModelGroup(PLANNING_GROUP);
 
-  // Using the
-  // :moveit_codedir:`RobotModel<moveit_core/robot_model/include/moveit/robot_model/robot_model.hpp>`,
-  // we can construct a
-  // :moveit_codedir:`PlanningScene<moveit_core/planning_scene/include/moveit/planning_scene/planning_scene.hpp>`
-  // that maintains the state of the world (including the robot).
   planning_scene::PlanningScenePtr planning_scene(new planning_scene::PlanningScene(robot_model));
 
   // Configure a valid robot state
-  planning_scene->getCurrentStateNonConst().setToDefaultValues(joint_model_group, "home");
+  planning_scene->getCurrentStateNonConst().setToDefaultValues(joint_model_group, "ready");
 
-  // We will now construct a loader to load a planner, by name.
-  // Note that we are using the ROS pluginlib library here.
   std::unique_ptr<pluginlib::ClassLoader<planning_interface::PlannerManager>> planner_plugin_loader;
   planning_interface::PlannerManagerPtr planner_instance;
   std::vector<std::string> planner_plugin_names;
 
-  // We will get the name of planning plugin we want to load
-  // from the ROS parameter server, and then load the planner
-  // making sure to catch all exceptions.
-  if (!motion_planning_api_tutorial_node->get_parameter("ompl.planning_plugins", planner_plugin_names))
+  if (!tag_picker_node->get_parameter("ompl.planning_plugins", planner_plugin_names))
     RCLCPP_FATAL(LOGGER, "Could not find planner plugin names");
   try
   {
@@ -122,8 +62,8 @@ int main(int argc, char** argv)
   try
   {
     planner_instance.reset(planner_plugin_loader->createUnmanagedInstance(planner_name));
-    if (!planner_instance->initialize(robot_model, motion_planning_api_tutorial_node,
-                                      motion_planning_api_tutorial_node->get_namespace()))
+    if (!planner_instance->initialize(robot_model, tag_picker_node,
+                                      tag_picker_node->get_namespace()))
       RCLCPP_FATAL(LOGGER, "Could not initialize planner instance");
     RCLCPP_INFO(LOGGER, "Using planning interface '%s'", planner_instance->getDescription().c_str());
   }
@@ -137,14 +77,10 @@ int main(int argc, char** argv)
                  ex.what(), ss.str().c_str());
   }
 
-  moveit::planning_interface::MoveGroupInterface move_group(motion_planning_api_tutorial_node, PLANNING_GROUP);
+  moveit::planning_interface::MoveGroupInterface move_group(tag_picker_node, PLANNING_GROUP);
 
-  // Visualization
-  // ^^^^^^^^^^^^^
-  // The package MoveItVisualTools provides many capabilities for visualizing objects, robots,
-  // and trajectories in RViz as well as debugging tools such as step-by-step introspection of a script.
   namespace rvt = rviz_visual_tools;
-  moveit_visual_tools::MoveItVisualTools visual_tools(motion_planning_api_tutorial_node, "link1",
+  moveit_visual_tools::MoveItVisualTools visual_tools(tag_picker_node, "link1",
                                                       "move_group_tutorial", move_group.getRobotModel());
   visual_tools.enableBatchPublishing();
   visual_tools.deleteAllMarkers();  // clear all old markers
@@ -174,22 +110,22 @@ int main(int argc, char** argv)
   planning_interface::MotionPlanResponse res;
   geometry_msgs::msg::PoseStamped pose;
   pose.header.frame_id = "link1";
-  pose.pose.position.x = 0.-1;
-  pose.pose.position.y = 0.1;
-  pose.pose.position.z = 0.15;
+  pose.pose.position.x = 0.1;
+  pose.pose.position.y = -0.15;
+  pose.pose.position.z = 0.1;
   pose.pose.orientation.w = 1.0;
 
   // A tolerance of 0.01 m is specified in position
   // and 0.01 radians in orientation
-  std::vector<double> tolerance_pose(3, 0.01);
-  std::vector<double> tolerance_angle(3, 0.01);
+  std::vector<double> tolerance_pose(1, 0.1);
+  std::vector<double> tolerance_angle(1, 0.1);
 
   // We will create the request as a constraint using a helper function available
   // from the
   // :moveit_codedir:`kinematic_constraints<moveit_core/kinematic_constraints/include/moveit/kinematic_constraints/kinematic_constraint.hpp>`
   // package.
   moveit_msgs::msg::Constraints pose_goal =
-      kinematic_constraints::constructGoalConstraints("link6_flange", pose, tolerance_pose, tolerance_angle);
+      kinematic_constraints::constructGoalConstraints("TCP", pose, 0.1, 0.1);
 
   req.group_name = PLANNING_GROUP;
   req.goal_constraints.push_back(pose_goal);
@@ -221,7 +157,7 @@ int main(int argc, char** argv)
   // Visualize the result
   // ^^^^^^^^^^^^^^^^^^^^
   std::shared_ptr<rclcpp::Publisher<moveit_msgs::msg::DisplayTrajectory>> display_publisher =
-      motion_planning_api_tutorial_node->create_publisher<moveit_msgs::msg::DisplayTrajectory>("/display_planned_path",
+      tag_picker_node->create_publisher<moveit_msgs::msg::DisplayTrajectory>("/display_planned_path",
                                                                                                1);
   moveit_msgs::msg::DisplayTrajectory display_trajectory;
 
@@ -251,7 +187,7 @@ int main(int argc, char** argv)
   // ^^^^^^^^^^^^^^^^^
   // Now, setup a joint space goal
   moveit::core::RobotState goal_state(robot_model);
-  std::vector<double> joint_values = { 0.1, 0.2, 0.0, 0.0, 0.0, 0.0};
+  std::vector<double> joint_values = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
   goal_state.setJointGroupPositions(joint_model_group, joint_values);
   RCLCPP_INFO(LOGGER, "DEMO: Planning to a joint space goal");
 
@@ -321,11 +257,11 @@ int main(int argc, char** argv)
   /* Let's create a new pose goal */
 
   pose.pose.position.x = 0.1;
-  pose.pose.position.y = -0.1;
+  pose.pose.position.y = 0.1;
   pose.pose.position.z = 0.15;
   pose.pose.orientation.w = 1.0;
   moveit_msgs::msg::Constraints pose_goal_2 =
-      kinematic_constraints::constructGoalConstraints("link6_flange", pose, tolerance_pose, tolerance_angle);
+      kinematic_constraints::constructGoalConstraints("TCP", pose, tolerance_pose, tolerance_angle);
 
   /* Now, let's try to move to this new pose goal*/
   req.goal_constraints.clear();
@@ -335,7 +271,7 @@ int main(int argc, char** argv)
      Here, we are asking for the end-effector to stay level*/
   geometry_msgs::msg::QuaternionStamped quaternion;
   quaternion.header.frame_id = "link1";
-  req.path_constraints = kinematic_constraints::constructGoalConstraints("link6_flange", quaternion);
+  req.path_constraints = kinematic_constraints::constructGoalConstraints("TCP", quaternion);
 
   // Imposing path constraints requires the planner to reason in the space of possible positions of the end-effector
   // (the workspace of the robot)

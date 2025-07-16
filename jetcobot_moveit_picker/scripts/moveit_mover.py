@@ -84,6 +84,7 @@ def main():
     ###################################################################
     # MoveItPy Setup
     ###################################################################
+    time.sleep(3.0)
     rclpy.init()
     logger = get_logger("moveit_py_jetcobot_planning_scene")
 
@@ -102,8 +103,6 @@ def main():
     jetcobot_arm.set_start_state_to_current_state
     jetcobot_arm.set_goal_state(configuration_name="home")
     plan_and_execute(jetcobot, jetcobot_arm, logger, sleep_time=3.0)
-
-    rclpy.spin()
    
     jetcobot_arm.set_start_state_to_current_state()
 
@@ -113,13 +112,25 @@ def main():
     pose_goal = PoseStamped()
     pose_goal.header.frame_id = "link1"
     pose_goal.pose.orientation.w = 1.0
-    pose_goal.pose.position.x = 0.18
+    pose_goal.pose.position.x = 0.15
     pose_goal.pose.position.y = -0.1
     pose_goal.pose.position.z = 0.15
     jetcobot_arm.set_goal_state(pose_stamped_msg=pose_goal, pose_link="link6_flange")
 
     # plan to goal
     plan_and_execute(jetcobot, jetcobot_arm, logger, sleep_time=3.0)
+
+    pose_goal = PoseStamped()
+    pose_goal.header.frame_id = "link1"
+    pose_goal.pose.orientation.w = 1.0
+    pose_goal.pose.position.x = -0.15
+    pose_goal.pose.position.y = -0.1
+    pose_goal.pose.position.z = 0.12
+    jetcobot_arm.set_goal_state(pose_stamped_msg=pose_goal, pose_link="link6_flange")
+
+    # plan to goal
+    plan_and_execute(jetcobot, jetcobot_arm, logger, sleep_time=3.0)
+
 
     ###################################################################
     # Check collisions
@@ -157,13 +168,13 @@ def main():
     # Remove collision objects and return to the ready pose
     ###################################################################
 
-    # with planning_scene_monitor.read_write() as scene:
-    #     scene.remove_all_collision_objects()
-    #     scene.current_state.update()
+    with planning_scene_monitor.read_write() as scene:
+        scene.remove_all_collision_objects()
+        scene.current_state.update()
 
-    # jetcobot_arm.set_start_state_to_current_state()
-    # jetcobot_arm.set_goal_state(configuration_name="home")
-    # plan_and_execute(jetcobot, jetcobot_arm, logger, sleep_time=3.0)
+    jetcobot_arm.set_start_state_to_current_state()
+    jetcobot_arm.set_goal_state(configuration_name="home")
+    plan_and_execute(jetcobot, jetcobot_arm, logger, sleep_time=3.0)
 
 
 if __name__ == "__main__":
