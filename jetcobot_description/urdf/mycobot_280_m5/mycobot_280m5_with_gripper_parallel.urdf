@@ -322,6 +322,14 @@
             <inertia ixx="0.03" iyy="0.03" izz="0.03" ixy="0.0" ixz="0.0" iyz="0.0"/>
         </inertial>
     </link>
+    <link name="TCP">
+        <visual>
+            <geometry>
+                <box size="0.01 0.01 0.01"/>
+            </geometry>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+        </visual>
+    </link>
     <joint name="g_base_to_link1" type="fixed">
         <axis xyz="0 0 0" />
         <limit effort="1000.0" lower="-3.14" upper="3.14159" velocity="0" />
@@ -382,6 +390,11 @@
         <parent link="gripper_base"/>
         <child link="jetcocam"/>
         <origin xyz="0 0 -0.048" rpy="-1.5708 3.1416 0"/>
+    </joint>
+    <joint name="gripper_base_to_TCP" type="fixed">
+        <parent link="gripper_base"/>
+        <child link="TCP"/>
+        <origin xyz="0 0.07 0" rpy="-1.5708 3.1416 0"/>
     </joint>
     <joint name="gripper_controller" type="revolute">
         <axis xyz="0 0 1" />
