@@ -8,7 +8,7 @@ import pymycobot
 from packaging import version
 
 # MAX_REQUIRE_VERSION = '3.5.3'
-from pymycobot import MyCobot
+from pymycobot.mycobot280 import MyCobot280
     
 class Joint_controller(Node):
     def __init__(self):
@@ -38,30 +38,31 @@ class Joint_controller(Node):
         self.last_gripper_command = None
         self.gripper_command = None
 
-        self.mc = MyCobot("/dev/ttyJETCOBOT", 1000000)
-        time.sleep(0.05)
+        self.mc = MyCobot280("/dev/ttyJETCOBOT", 1000000)
+        time.sleep(0.3)
         self.mc.set_fresh_mode(1)
-        time.sleep(0.05)
+        time.sleep(0.3)
 
     def listener_callback(self, msg):
         data_list = []
         for _, value in enumerate(msg.position):
             radians_to_angles = round(math.degrees(value), 2)
             data_list.append(radians_to_angles)
-        self.mc.send_angles(data_list, 100)
+        self.mc.send_angles(data_list, 100, _async=True)
         
     def gripper_callback(self, msg):
         self.gripper_command = int(msg.data)
-        time.sleep(0.1)
+        time.sleep(0.2)
         for i in range(5):
            self.mc.set_gripper_state(int(msg.data), 30)
            time.sleep(0.05)
         self.get_logger().info(f"Gripper command: {int(msg.data)}")
+        time.sleep(0.2)
         
 
     def get_radians_cmd_callback(self,_):
         joint_state = JointState()
-        time.sleep(0.25)
+        time.sleep(0.2)
         angles = self.mc.get_radians()
         
         if angles is not None:
@@ -81,7 +82,7 @@ class Joint_controller(Node):
         joint_state.velocity = [0.0] * len(joint_state.name)
         joint_state.effort = [0.0] * len(joint_state.name)
         self.pub.publish(joint_state)
-        time.sleep(0.25)
+        time.sleep(0.2)
 
 
 def main(args=None):
