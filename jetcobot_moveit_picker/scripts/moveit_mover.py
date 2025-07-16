@@ -111,58 +111,43 @@ def main():
 
     pose_goal = PoseStamped()
     pose_goal.header.frame_id = "link1"
-    pose_goal.pose.orientation.w = 1.0
+    pose_goal.pose.orientation.x = 0.452
+    pose_goal.pose.orientation.y = -0.502
+    pose_goal.pose.orientation.z = 0.498
+    pose_goal.pose.orientation.w = -0.498
     pose_goal.pose.position.x = 0.15
     pose_goal.pose.position.y = -0.1
     pose_goal.pose.position.z = 0.15
-    jetcobot_arm.set_goal_state(pose_stamped_msg=pose_goal, pose_link="link6_flange")
+    jetcobot_arm.set_goal_state(pose_stamped_msg=pose_goal, pose_link="TCP")
 
     # plan to goal
     plan_and_execute(jetcobot, jetcobot_arm, logger, sleep_time=3.0)
 
-    pose_goal = PoseStamped()
+   
+
     pose_goal.header.frame_id = "link1"
     pose_goal.pose.orientation.w = 1.0
     pose_goal.pose.position.x = -0.15
     pose_goal.pose.position.y = -0.1
     pose_goal.pose.position.z = 0.12
-    jetcobot_arm.set_goal_state(pose_stamped_msg=pose_goal, pose_link="link6_flange")
+    jetcobot_arm.set_goal_state(pose_stamped_msg=pose_goal, pose_link="TCP")
 
     # plan to goal
     plan_and_execute(jetcobot, jetcobot_arm, logger, sleep_time=3.0)
 
+    pose_goal.header.frame_id = "link1"
+    pose_goal.pose.orientation.x = 0.422
+    pose_goal.pose.orientation.y = -0.502
+    pose_goal.pose.orientation.z = 0.498
+    pose_goal.pose.orientation.w = -0.498
+    pose_goal.pose.position.x = 0.220
+    pose_goal.pose.position.y = 0.109
+    pose_goal.pose.position.z = 0.156
+    jetcobot_arm.set_goal_state(pose_stamped_msg=pose_goal, pose_link="TCP")
 
-    ###################################################################
-    # Check collisions
-    ###################################################################
-    # with planning_scene_monitor.read_only() as scene:
-
-    #     robot_state = scene.current_state
-    #     original_joint_positions = robot_state.get_joint_group_positions("arm")
-
-    #     # Set the pose goal
-    #     pose_goal = Pose()
-    #     pose_goal.position.x = 0.1
-    #     pose_goal.position.y = 0.1
-    #     pose_goal.position.z = 0.15
-    #     pose_goal.orientation.w = 1.0
-
-    #     # Set the robot state and check collisions
-    #     robot_state.set_from_ik("arm", pose_goal, "link6_flange")
-    #     robot_state.update()  # required to update transforms
-    #     robot_collision_status = scene.is_state_colliding(
-    #         robot_state=robot_state, joint_model_group_name="arm", verbose=True
-    #     )
-    #     logger.info(f"\nRobot is in collision: {robot_collision_status}\n")
-
-    #     # Restore the original state
-    #     robot_state.set_joint_group_positions(
-    #         "arm",
-    #         original_joint_positions,
-    #     )
-    #     robot_state.update()  # required to update transforms
-
-    # time.sleep(3.0)
+    # plan to goal
+    plan_and_execute(jetcobot, jetcobot_arm, logger, sleep_time=3.0)
+   
 
     ###################################################################
     # Remove collision objects and return to the ready pose

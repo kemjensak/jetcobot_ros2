@@ -41,9 +41,9 @@ def generate_launch_description():
     )
 
     rviz_config_file = os.path.join(
-        get_package_share_directory("moveit2_tutorials"),
+        get_package_share_directory("jetcobot_moveit_picker"),
         "config",
-        "motion_planning_python_api_tutorial.rviz",
+        "mover.rviz",
     )
 
     rviz_node = Node(
