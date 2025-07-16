@@ -7,7 +7,7 @@ moveit_setup_assistant_config:
   package_settings:
     author_name: Jinseok Kim
     author_email: jinseok.kim970@gmail.com
-    generated_timestamp: 1752220991
+    generated_timestamp: 1752630322
   control_xacro:
     command:
       - position
