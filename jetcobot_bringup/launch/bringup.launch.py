@@ -20,6 +20,13 @@ def generate_launch_description():
         output="screen"
     )
 
+    joint_state_switcher_node = Node(
+        package="jetcobot_bringup",
+        executable="joint_state_switcher",
+        name="joint_state_switcher_node",
+        output="screen"
+    )
+
     # Include camera_info_publisher launch file
     camera_info_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource([
@@ -32,6 +39,20 @@ def generate_launch_description():
         launch_arguments={
             'camera_name': 'jetcocam',
             'frame_id': 'jetcocam'
+        }.items()
+    )
+
+    # Include jetcobot_moveit_config demo.launch.py with use_rviz=false
+    moveit_demo_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource([
+            PathJoinSubstitution([
+                FindPackageShare('jetcobot_moveit_config'),
+                'launch',
+                'demo.launch.py'
+            ])
+        ]),
+        launch_arguments={
+            'use_rviz': 'false'
         }.items()
     )
 
@@ -51,7 +72,9 @@ def generate_launch_description():
     return LaunchDescription(
         [
             joint_control_node,
+            joint_state_switcher_node,
             camera_info_launch,
+            moveit_demo_launch,
             apriltag_ros_node,
         ]
     )
