@@ -1,7 +1,7 @@
 # This config file is used by ros2_control
 controller_manager:
   ros__parameters:
-    update_rate: 40  # Hz
+    update_rate: 30  # Hz
 
     arm_controller:
       type: joint_trajectory_controller/JointTrajectoryController
@@ -26,7 +26,9 @@ arm_controller:
     state_interfaces:
       - position
     allow_nonzero_velocity_at_trajectory_end: true
+    interpolate_from_desired_state: true
 
+      
 forward_position_controller:
   ros__parameters:
     joints:
@@ -36,3 +38,7 @@ forward_position_controller:
       - link5_to_link4
       - link6_to_link5
       - link6output_to_link6
+
+joint_state_broadcaster:
+  ros__parameters:
+    use_local_topics: true
