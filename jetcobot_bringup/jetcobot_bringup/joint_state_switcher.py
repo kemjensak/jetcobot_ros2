@@ -103,7 +103,7 @@ class JointStateSwitcher(Node):
             # self.get_logger().info('Status changed from 2 to 4, switching to real joint states')
             
             # get_angles_cmd 토픽에 아무 값이나 발행
-            time.sleep(0.2)  # 잠시 대기
+            # time.sleep(0.2)  # 잠시 대기
             cmd_msg = Bool()
             self.get_angles_cmd_pub.publish(cmd_msg)
             # self.get_logger().info('Published get_angles_cmd')

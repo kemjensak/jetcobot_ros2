@@ -102,7 +102,7 @@ class Joint_controller(Node):
         
         # 최대 5번 재시도
         for attempt in range(5):
-            time.sleep(0.2)
+            time.sleep(0.4)
             angles = self.mc.get_angles()
             
             # angles가 존재하고 리스트이며 6개의 값이 모두 있는지 확인
