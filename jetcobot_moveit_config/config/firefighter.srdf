@@ -21,11 +21,19 @@
         <joint name="link6_to_link5" value="0"/>
         <joint name="link6output_to_link6" value="-0.7854"/>
     </group_state>
-    <group_state name="ready" group="arm">
+    <group_state name="ready_to_see" group="arm">
         <joint name="link2_to_link1" value="0"/>
         <joint name="link3_to_link2" value="0.7854"/>
-        <joint name="link4_to_link3" value="-1.5708"/>
-        <joint name="link5_to_link4" value="0.7854"/>
+        <joint name="link4_to_link3" value="-1.4835"/>
+        <joint name="link5_to_link4" value="-0.4363"/>
+        <joint name="link6_to_link5" value="0"/>
+        <joint name="link6output_to_link6" value="-0.7854"/>
+    </group_state>
+     <group_state name="ready_to_grab" group="arm">
+        <joint name="link2_to_link1" value="0"/>
+        <joint name="link3_to_link2" value="-0.5236"/>
+        <joint name="link4_to_link3" value="-0.5236"/>
+        <joint name="link5_to_link4" value="-0.5236"/>
         <joint name="link6_to_link5" value="0"/>
         <joint name="link6output_to_link6" value="-0.7854"/>
     </group_state>
