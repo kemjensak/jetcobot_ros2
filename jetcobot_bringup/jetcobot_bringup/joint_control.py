@@ -42,8 +42,6 @@ class Joint_controller(Node):
         )
 
         self.pub = self.create_publisher(JointState, "real_joint_states", 1)
-
-        self.last_gripper_command = None
         self.gripper_command = None
         
         # move_action 상태 추적
@@ -64,17 +62,26 @@ class Joint_controller(Node):
         for _, value in enumerate(msg.position):
             radians_to_angles = round(math.degrees(value), 2)
             data_list.append(radians_to_angles)
+        # add 0.1 to joint 1~3
+        for i in range(2):
+            data_list[i] += 5.00
+
         self.mc.send_angles(data_list, 100, _async=True)
         
     def gripper_callback(self, msg):
         self.gripper_command = int(msg.data)
-        time.sleep(0.2)
-        for i in range(5):
-           self.mc.set_gripper_state(int(msg.data), 30)
-           time.sleep(0.05)
-        self.get_logger().info(f"Gripper command: {int(msg.data)}")
-        time.sleep(0.2)
-        
+        for attempt in range(5):
+            time.sleep(0.2)
+            self.mc.set_gripper_state(self.gripper_command, 30)
+            result = self.mc.get_gripper_value()
+            if result != -1:
+                self.get_logger().info(f"Set gripper command: {int(msg.data)}, Gripper state: {result}")
+                break
+            else:
+                self.get_logger().warn(f"Failed to set gripper state, attempt {attempt + 1}/5")
+                if attempt == 4:
+                    self.get_logger().error("Failed to set gripper state after 5 attempts")
+
     def move_action_status_callback(self, msg):
         """move_action status 토픽 콜백"""
         if not msg.status_list:
