@@ -36,7 +36,7 @@ class Joint_controller(Node):
 
         self.move_action_status_sub = self.create_subscription(
             GoalStatusArray,
-            '/arm_controller/follow_joint_trajectory/_action/status',
+            '/arm_group_controller/follow_joint_trajectory/_action/status',
             self.move_action_status_callback,
             10
         )
@@ -62,9 +62,6 @@ class Joint_controller(Node):
         for _, value in enumerate(msg.position):
             radians_to_angles = round(math.degrees(value), 2)
             data_list.append(radians_to_angles)
-        # add 0.1 to joint 1~3
-        for i in range(2):
-            data_list[i] += 5.00
 
         self.mc.send_angles(data_list, 100, _async=True)
         
@@ -118,12 +115,12 @@ class Joint_controller(Node):
                 joint_state.position = [math.radians(angle) for angle in angles]
                 joint_state.header.stamp = self.get_clock().now().to_msg()
                 joint_state.name = [
-                    "link2_to_link1",
-                    "link3_to_link2",
-                    "link4_to_link3",
-                    "link5_to_link4",
-                    "link6_to_link5",
-                    "link6output_to_link6",
+                    "1_Joint",
+                    "2_Joint",
+                    "3_Joint",
+                    "4_Joint",
+                    "5_Joint",
+                    "6_Joint",
                 ]
                 joint_state.velocity = [0.0] * len(joint_state.name)
                 joint_state.effort = [0.0] * len(joint_state.name)

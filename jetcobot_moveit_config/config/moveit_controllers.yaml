@@ -4,29 +4,16 @@ moveit_controller_manager: moveit_simple_controller_manager/MoveItSimpleControll
 
 moveit_simple_controller_manager:
   controller_names:
-    - arm_controller
-    # - forward_position_controller
+    - arm_group_controller
 
-  arm_controller:
+  arm_group_controller:
     type: FollowJointTrajectory
     joints:
-      - link2_to_link1
-      - link3_to_link2
-      - link4_to_link3
-      - link5_to_link4
-      - link6_to_link5
-      - link6output_to_link6
-    action_ns: "follow_joint_trajectory"
+      - 1_Joint
+      - 2_Joint
+      - 3_Joint
+      - 4_Joint
+      - 5_Joint
+      - 6_Joint
+    action_ns: follow_joint_trajectory
     default: true
-
-  # forward_position_controller:
-  #   type: FollowJointTrajectory
-  #   joints:
-  #     - link2_to_link1
-  #     - link3_to_link2
-  #     - link4_to_link3
-  #     - link5_to_link4
-  #     - link6_to_link5
-  #     - link6output_to_link6
-  #   action_ns: "follow_joint_trajectory"
-  #   default: true

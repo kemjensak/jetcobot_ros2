@@ -3,5 +3,5 @@ from moveit_configs_utils.launches import generate_spawn_controllers_launch
 
 
 def generate_launch_description():
-    moveit_config = MoveItConfigsBuilder("firefighter", package_name="jetcobot_moveit_config").to_moveit_configs()
+    moveit_config = MoveItConfigsBuilder("jetcobot", package_name="jetcobot_moveit_config").to_moveit_configs()
     return generate_spawn_controllers_launch(moveit_config)

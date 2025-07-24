@@ -4,7 +4,7 @@
   <name>jetcobot_moveit_config</name>
   <version>0.3.0</version>
   <description>
-     An automatically generated package with all the configuration and launch files for using the firefighter with the MoveIt Motion Planning Framework
+     An automatically generated package with all the configuration and launch files for using the jetcobot with the MoveIt Motion Planning Framework
   </description>
   <maintainer email="jinseok.kim970@gmail.com">Jinseok Kim</maintainer>
 

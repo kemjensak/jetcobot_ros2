@@ -1,0 +1,518 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- This URDF was automatically created by SolidWorks to URDF Exporter! Originally created by Stephen Brawner (brawner@gmail.com) 
+     Commit Version: 1.6.0-1-g15f4949  Build Version: 1.6.7594.29634
+     For more information, please see http://wiki.ros.org/sw_urdf_exporter -->
+<robot name="jetcobot">
+  <link name="dummy"/>
+  <joint name="dummy_joint" type="fixed">
+    <parent link="dummy"/>
+    <child link="base_link"/>
+  </joint>
+  <link
+    name="base_link">
+    <inertial>
+      <origin
+        xyz="-0.0131083790012654 6.69302038809875E-06 0.0354087419202998"
+        rpy="0 0 0" />
+      <mass
+        value="0.492874947350045" />
+      <inertia
+        ixx="0.000404279561956854"
+        ixy="9.00304029145705E-08"
+        ixz="-1.87890310458906E-05"
+        iyy="0.000608346288236137"
+        iyz="4.80299375571781E-08"
+        izz="0.000624652394733672" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://jetcobot_description/meshes/base_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://jetcobot_description/meshes/base_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <link
+    name="1_Link">
+    <inertial>
+      <origin
+        xyz="-1.31131235135193E-05 -0.00680904441821013 0.0422096528553218"
+        rpy="0 0 0" />
+      <mass
+        value="0.0362552727733653" />
+      <inertia
+        ixx="2.91075748915876E-05"
+        ixy="6.17235351914783E-09"
+        ixz="-9.05544995948064E-09"
+        iyy="3.1419883802157E-05"
+        iyz="7.56958694374969E-06"
+        izz="1.50541827786635E-05" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://jetcobot_description/meshes/1_Link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://jetcobot_description/meshes/1_Link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="1_Joint"
+    type="revolute">
+    <origin
+      xyz="0 0 0.074520000000001"
+      rpy="0 0 0" />
+    <parent
+      link="base_link" />
+    <child
+      link="1_Link" />
+    <axis
+      xyz="0 0 1" />
+    <limit
+      lower="-3.14"
+      upper="3.14159"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="2_Link">
+    <inertial>
+      <origin
+        xyz="-7.75613648330207E-06 -0.0235034548911008 0.0516000320310254"
+        rpy="0 0 0" />
+      <mass
+        value="0.0668252611526333" />
+      <inertia
+        ixx="0.00015843232374682"
+        ixy="-1.60643645992328E-09"
+        ixz="8.77346086416886E-09"
+        iyy="0.00016705510176789"
+        iyz="-5.95622238422236E-07"
+        izz="2.06389799675899E-05" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://jetcobot_description/meshes/2_Link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://jetcobot_description/meshes/2_Link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="2_Joint"
+    type="revolute">
+    <origin
+      xyz="-2.56344886174708E-05 -0.0349999906124702 0.06"
+      rpy="0 0 0" />
+    <parent
+      link="1_Link" />
+    <child
+      link="2_Link" />
+    <axis
+      xyz="-0.000732413960501075 -0.999999731784859 0" />
+    <limit
+      lower="-2.9322"
+      upper="2.9322"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="3_Link">
+    <inertial>
+      <origin
+        xyz="1.6839879676764E-05 0.023294180860769 0.0437213142176436"
+        rpy="0 0 0" />
+      <mass
+        value="0.0533199813011819" />
+      <inertia
+        ixx="9.73800220777058E-05"
+        ixy="4.03928474755798E-09"
+        ixz="9.626338081533E-09"
+        iyy="0.000101574874298831"
+        iyz="-4.03698497989361E-06"
+        izz="1.36929060248111E-05" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://jetcobot_description/meshes/3_Link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://jetcobot_description/meshes/3_Link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="3_Joint"
+    type="revolute">
+    <origin
+      xyz="0 0.00678999562722426 0.109999999944807"
+      rpy="0 0 0" />
+    <parent
+      link="2_Link" />
+    <child
+      link="3_Link" />
+    <axis
+      xyz="0.000732413960503172 -0.999999731784859 0" />
+    <limit
+      lower="-2.3562"
+      upper="2.3562"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="4_Link">
+    <inertial>
+      <origin
+        xyz="-4.84201074579515E-06 -0.0230260014326339 0.0076796931512822"
+        rpy="0 0 0" />
+      <mass
+        value="0.0240531902650696" />
+      <inertia
+        ixx="9.31854762217622E-06"
+        ixy="6.04168630160668E-10"
+        ixz="3.4137552727643E-09"
+        iyy="7.73418506337023E-06"
+        iyz="3.30830574244328E-06"
+        izz="7.81256309739935E-06" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://jetcobot_description/meshes/4_Link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://jetcobot_description/meshes/4_Link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="4_Joint"
+    type="revolute">
+    <origin
+      xyz="0 -0.00134543437627838 0.0959999996761873"
+      rpy="0 0 0" />
+    <parent
+      link="3_Link" />
+    <child
+      link="4_Link" />
+    <axis
+      xyz="0.000732413960503879 -0.999999731784859 0" />
+    <limit
+      lower="-2.618"
+      upper="2.618"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="5_Link">
+    <inertial>
+      <origin
+        xyz="0.000920147444179747 -8.87115340001549E-05 0.0288537732000537"
+        rpy="0 0 0" />
+      <mass
+        value="0.0314577601971656" />
+      <inertia
+        ixx="1.33683459564198E-05"
+        ixy="2.60891660423066E-08"
+        ixz="-2.99675037743924E-06"
+        iyy="1.32866723243173E-05"
+        iyz="1.65645962236069E-08"
+        izz="8.52777440880247E-06" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://jetcobot_description/meshes/5_Link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://jetcobot_description/meshes/5_Link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="5_Joint"
+    type="revolute">
+    <origin
+      xyz="-2.51335035583085E-05 -0.0335399905878049 0.0348292449246146"
+      rpy="0 0 0" />
+    <parent
+      link="4_Link" />
+    <child
+      link="5_Link" />
+    <axis
+      xyz="-1.63178762811156E-05 0 0.999999999866863" />
+    <limit
+      lower="-2.5307"
+      upper="2.5307"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="6_Link">
+    <inertial>
+      <origin
+        xyz="0.00719200131540984 -7.65911084783799E-06 3.05896694446917E-06"
+        rpy="0 0 0" />
+      <mass
+        value="0.00770526463879312" />
+      <inertia
+        ixx="1.35526258323655E-06"
+        ixy="-5.85324410888035E-10"
+        ixz="5.99325370891833E-11"
+        iyy="8.40446638273888E-07"
+        iyz="-2.43816134145291E-10"
+        izz="8.40443397022734E-07" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://jetcobot_description/meshes/6_Link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://jetcobot_description/meshes/6_Link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="6_Joint"
+    type="revolute">
+    <origin
+      xyz="0.0319651869150594 -2.83148869312522E-05 0.03992044757551"
+      rpy="0.785398 0 0" />
+    <parent
+      link="5_Link" />
+    <child
+      link="6_Link" />
+    <axis
+      xyz="0.999999508360072 0.00099147029270504 -1.63178800449753E-05" />
+    <limit
+      lower="-2.8798"
+      upper="2.8798"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="gripper_link">
+    <inertial>
+      <origin
+        xyz="-0.0127383844547501 -0.00102792378260975 0.00665087237013234"
+        rpy="0 0 0" />
+      <mass
+        value="0.122679365027093" />
+      <inertia
+        ixx="3.97803940650974E-05"
+        ixy="1.74508723344598E-07"
+        ixz="5.13423679351684E-07"
+        iyy="4.07773392923937E-05"
+        iyz="-2.34868583366612E-06"
+        izz="5.19432393430342E-05" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://jetcobot_description/meshes/jiazhua_Link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://jetcobot_description/meshes/jiazhua_Link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="gripper_Joint"
+    type="fixed">
+    <origin
+      xyz="0.0639055160565718 -5.66075356250029E-05 -0.00773230647256523"
+      rpy="0 0 0" />
+    <parent
+      link="6_Link" />
+    <child
+      link="gripper_link" />
+    <axis
+      xyz="0 0 0" />
+  </joint>
+  <link
+    name="jetcocam">
+    <inertial>
+      <origin
+        xyz="-0.00275231085999596 -0.000213763964140273 0.00241270444256747"
+        rpy="0 -1.5707963 1.5707963" />
+      <mass
+        value="0.0173158610148997" />
+      <inertia
+        ixx="3.93857833594377E-06"
+        ixy="5.78200746595397E-09"
+        ixz="3.48752198317634E-07"
+        iyy="2.77644660480074E-06"
+        iyz="1.7431869934464E-09"
+        izz="2.12940000335535E-06" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 -0.01"
+        rpy="0 -1.5707963 1.5707963" />
+      <geometry>
+        <mesh
+          filename="package://jetcobot_description/meshes/camera_Link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+         rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 -0.01"
+        rpy="0 -1.5707963 1.5707963" />
+      <geometry>
+        <mesh
+          filename="package://jetcobot_description/meshes/camera_Link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="camera_joint"
+    type="fixed">
+    <origin
+      xyz="0.033 0 0.045"
+      rpy="-1.5707963 0 -1.5707963" />
+    <parent
+      link="6_Link" />
+    <child
+      link="jetcocam" />
+    <axis
+      xyz="0 0 0" />
+  </joint>
+  <link name="TCP">
+        <visual>
+            <geometry>
+                <box size="0.01 0.01 0.01"/>
+            </geometry>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+        </visual>
+  </link>
+  <joint name="TCP_joint" type="fixed">
+      <parent link="gripper_link"/>
+      <child link="TCP"/>
+      <origin xyz="0.05 0 0.02" rpy="-1.5707963 0 -1.5707963"/>
+  </joint>
+</robot>

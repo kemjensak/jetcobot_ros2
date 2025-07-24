@@ -29,7 +29,7 @@ class JointStateSwitcher(Node):
         
         self.move_action_status_sub = self.create_subscription(
             GoalStatusArray,
-            '/arm_controller/follow_joint_trajectory/_action/status',
+            '/arm_group_controller/follow_joint_trajectory/_action/status',
             self.move_action_status_callback,
             10
         )

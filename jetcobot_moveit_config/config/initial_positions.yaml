@@ -1,9 +1,9 @@
-# Default initial positions for firefighter's ros2_control fake system
+# Default initial positions for jetcobot's ros2_control fake system
 
 initial_positions:
-  link2_to_link1: 0
-  link3_to_link2: 0
-  link4_to_link3: 0
-  link5_to_link4: 0
-  link6_to_link5: 0
-  link6output_to_link6: 0
+  1_Joint: 0
+  2_Joint: 0
+  3_Joint: 0
+  4_Joint: 0
+  5_Joint: 0
+  6_Joint: 0

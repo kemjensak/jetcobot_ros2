@@ -6,9 +6,9 @@ Panels:
       Expanded:
         - /MotionPlanning1
         - /TF1
-        - /TF1/Frames1
+        - /TF1/Status1
       Splitter Ratio: 0.5
-    Tree Height: 111
+    Tree Height: 144
   - Class: rviz_common/Help
     Name: Help
   - Class: rviz_common/Views
@@ -16,8 +16,6 @@ Panels:
       - /Current View1
     Name: Views
     Splitter Ratio: 0.5
-  - Class: rviz_visual_tools/RvizVisualToolsGui
-    Name: RvizVisualToolsGui
 Visualization Manager:
   Class: ""
   Displays:
@@ -39,7 +37,7 @@ Visualization Manager:
       Plane Cell Count: 10
       Reference Frame: <Fixed Frame>
       Value: true
-    - Acceleration_Scaling_Factor: 1
+    - Acceleration_Scaling_Factor: 0.1
       Class: moveit_rviz_plugin/MotionPlanning
       Enabled: true
       Move Group Namespace: ""
@@ -65,6 +63,36 @@ Visualization Manager:
         Color Enabled: false
         Interrupt Display: false
         Links:
+          1_Link:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          2_Link:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          3_Link:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          4_Link:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          5_Link:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          6_Link:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
           All Links Enabled: true
           Expand Joint Details: false
           Expand Link Details: false
@@ -75,82 +103,21 @@ Visualization Manager:
             Show Axes: false
             Show Trail: false
             Value: true
-          g_base:
+          base_link:
             Alpha: 1
             Show Axes: false
             Show Trail: false
             Value: true
-          gripper_base:
+          dummy:
             Alpha: 1
             Show Axes: false
             Show Trail: false
-            Value: true
-          gripper_left1:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          gripper_left2:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          gripper_left3:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          gripper_right1:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          gripper_right2:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          gripper_right3:
+          gripper_link:
             Alpha: 1
             Show Axes: false
             Show Trail: false
             Value: true
           jetcocam:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          link1:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          link2:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          link3:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          link4:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          link5:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          link6:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          link6_flange:
             Alpha: 1
             Show Axes: false
             Show Trail: false
@@ -178,7 +145,7 @@ Visualization Manager:
         Goal State Color: 250; 128; 0
         Interactive Marker Size: 0
         Joint Violation Color: 255; 0; 255
-        Planning Group: arm
+        Planning Group: arm_group
         Query Goal State: true
         Query Start State: false
         Show Workspace: false
@@ -196,6 +163,36 @@ Visualization Manager:
       Scene Robot:
         Attached Body Color: 150; 50; 150
         Links:
+          1_Link:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          2_Link:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          3_Link:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          4_Link:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          5_Link:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          6_Link:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
           All Links Enabled: true
           Expand Joint Details: false
           Expand Link Details: false
@@ -206,42 +203,16 @@ Visualization Manager:
             Show Axes: false
             Show Trail: false
             Value: true
-          g_base:
+          base_link:
             Alpha: 1
             Show Axes: false
             Show Trail: false
             Value: true
-          gripper_base:
+          dummy:
             Alpha: 1
             Show Axes: false
             Show Trail: false
-            Value: true
-          gripper_left1:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          gripper_left2:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          gripper_left3:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          gripper_right1:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          gripper_right2:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          gripper_right3:
+          gripper_link:
             Alpha: 1
             Show Axes: false
             Show Trail: false
@@ -251,115 +222,67 @@ Visualization Manager:
             Show Axes: false
             Show Trail: false
             Value: true
-          link1:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          link2:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          link3:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          link4:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          link5:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          link6:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          link6_flange:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
         Robot Alpha: 0.5
         Show Robot Collision: false
         Show Robot Visual: true
       Value: true
-      Velocity_Scaling_Factor: 0.6
-    - Class: rviz_default_plugins/MarkerArray
-      Enabled: true
-      Name: MarkerArray
-      Namespaces:
-        {}
-      Topic:
-        Depth: 5
-        Durability Policy: Volatile
-        History Policy: Keep Last
-        Reliability Policy: Reliable
-        Value: /move_group_tutorial
-      Value: true
+      Velocity_Scaling_Factor: 0.1
     - Class: rviz_default_plugins/TF
       Enabled: true
       Filter (blacklist): ""
       Filter (whitelist): ""
       Frame Timeout: 15
       Frames:
+        1_Link:
+          Value: true
+        2_Link:
+          Value: true
+        3_Link:
+          Value: true
+        4_Link:
+          Value: true
+        5_Link:
+          Value: true
+        6_Link:
+          Value: true
         All Enabled: true
         TCP:
           Value: true
-        g_base:
+        base_link:
           Value: true
-        gripper_base:
+        dummy:
+          Value: true
+        gripper_link:
           Value: true
         jetcocam:
           Value: true
-        link1:
-          Value: true
-        link2:
-          Value: true
-        link3:
-          Value: true
-        link4:
-          Value: true
-        link5:
-          Value: true
-        link6:
-          Value: true
-        link6_flange:
-          Value: true
         world:
           Value: true
-      Marker Scale: 0.30000001192092896
+      Marker Scale: 0.4000000059604645
       Name: TF
       Show Arrows: true
       Show Axes: true
       Show Names: true
       Tree:
-        world:
-          g_base:
-            link1:
-              link2:
-                link3:
-                  link4:
-                    link5:
-                      link6:
-                        link6_flange:
-                          gripper_base:
-                            TCP:
-                              {}
-                            jetcocam:
-                              {}
+        dummy:
+          base_link:
+            1_Link:
+              2_Link:
+                3_Link:
+                  4_Link:
+                    5_Link:
+                      6_Link:
+                        gripper_link:
+                          TCP:
+                            {}
+                        jetcocam:
+                          {}
       Update Interval: 0
       Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
-    Fixed Frame: g_base
+    Fixed Frame: dummy
     Frame Rate: 30
   Name: root
   Tools:
@@ -374,30 +297,30 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 2.0828256607055664
+      Distance: 2.1823999881744385
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0.017238907516002655
-        Y: 0.2963548004627228
-        Z: 0.29812514781951904
+        X: -0.10000000149011612
+        Y: 0.25
+        Z: 0.30000001192092896
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.08500008285045624
-      Target Frame: g_base
+      Pitch: 0.4549999237060547
+      Target Frame: dummy
       Value: Orbit (rviz_default_plugins)
-      Yaw: 5.09018087387085
+      Yaw: 5.1901702880859375
     Saved: ~
 Window Geometry:
   Displays:
     collapsed: false
-  Height: 1011
+  Height: 975
   Help:
     collapsed: false
   Hide Left Dock: false
@@ -406,11 +329,9 @@ Window Geometry:
     collapsed: false
   MotionPlanning - Trajectory Slider:
     collapsed: false
-  QMainWindow State: 000000ff00000000fd0000000100000000000002b400000395fc0200000006fb00000044004d006f00740069006f006e0050006c0061006e006e0069006e00670020002d0020005400720061006a006500630074006f0072007900200053006c00690064006500720000000000ffffffff0000004400fffffffb000000100044006900730070006c006100790073010000003f000000f5000000cc00fffffffb0000001c004d006f00740069006f006e0050006c0061006e006e0069006e0067010000013a000001a10000019600fffffffb0000000800480065006c0070000000029a0000006e0000006f00fffffffb0000000a0056006900650077007301000002e1000000a9000000a900fffffffb00000024005200760069007a00560069007300750061006c0054006f006f006c00730047007500690100000390000000440000004400ffffff000004840000039500000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
-  RvizVisualToolsGui:
-    collapsed: false
+  QMainWindow State: 000000ff00000000fd0000000100000000000002b400000371fc0200000005fb00000044004d006f00740069006f006e0050006c0061006e006e0069006e00670020002d0020005400720061006a006500630074006f0072007900200053006c00690064006500720000000000ffffffff0000004400fffffffb000000100044006900730070006c006100790073010000003f00000116000000cc00fffffffb0000001c004d006f00740069006f006e0050006c0061006e006e0069006e0067010000015b000001a10000019600fffffffb0000000800480065006c0070000000029a0000006e0000006f00fffffffb0000000a005600690065007700730100000302000000ae000000a900ffffff000001f60000037100000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Views:
     collapsed: false
-  Width: 1854
-  X: 66
+  Width: 1200
+  X: 116
   Y: 333

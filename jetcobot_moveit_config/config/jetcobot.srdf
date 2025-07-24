@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--This does not replace URDF, and is not an extension of URDF.
+    This is a format for representing semantic information about the robot structure.
+    A URDF file must exist for this robot as well, where the joints and the links that are referenced are defined
+-->
+<robot name="jetcobot">
+    <!--GROUPS: Representation of a set of joints and links. This can be useful for specifying DOF to plan for, defining arms, end effectors, etc-->
+    <!--LINKS: When a link is specified, the parent joint of that link (if it exists) is automatically included-->
+    <!--JOINTS: When a joint is specified, the child link of that joint (which will always exist) is automatically included-->
+    <!--CHAINS: When a chain is specified, all the links along the chain (including endpoints) are included in the group. Additionally, all the joints that are parents to included links are also included. This means that joints along the chain and the parent joint of the base link are included in the group-->
+    <!--SUBGROUPS: Groups can also be formed by referencing to already defined group names-->
+    <group name="arm_group">
+        <chain base_link="base_link" tip_link="TCP"/>
+    </group>
+    <group name="gripper_group">
+        <link name="gripper_link"/>
+    </group>
+    <group_state name="home" group="arm_group">
+        <joint name="1_Joint" value="0"/>
+        <joint name="2_Joint" value="0"/>
+        <joint name="3_Joint" value="0"/>
+        <joint name="4_Joint" value="0"/>
+        <joint name="5_Joint" value="0"/>
+        <joint name="6_Joint" value="-0.7854"/>
+    </group_state>
+    <group_state name="ready_to_see" group="arm_group">
+        <joint name="1_Joint" value="0"/>
+        <joint name="2_Joint" value="0.7854"/>
+        <joint name="3_Joint" value="-1.4835"/>
+        <joint name="4_Joint" value="-0.4363"/>
+        <joint name="5_Joint" value="0"/>
+        <joint name="6_Joint" value="-0.7854"/>
+    </group_state>
+     <group_state name="ready_to_grab" group="arm_group">
+        <joint name="1_Joint" value="0"/>
+        <joint name="2_Joint" value="-0.5236"/>
+        <joint name="3_Joint" value="-0.5236"/>
+        <joint name="4_Joint" value="-0.5236"/>
+        <joint name="5_Joint" value="0"/>
+        <joint name="6_Joint" value="-0.7854"/>
+    </group_state>
+    <!--END EFFECTOR: Purpose: Represent information about an end effector.-->
+    <end_effector name="gripper" parent_link="6_Link" group="gripper_group"/>
+    <!--VIRTUAL JOINT: Purpose: this element defines a virtual joint between a robot link and an external frame of reference (considered fixed with respect to the robot)-->
+    <virtual_joint name="virtual_joint" type="fixed" parent_frame="world" child_link="dummy"/>
+    <!--DISABLE COLLISIONS: By default it is assumed that any link of the robot could potentially come into collision with any other link in the robot. This tag disables collision checking between a specified pair of links. -->
+    <disable_collisions link1="1_Link" link2="2_Link" reason="Adjacent"/>
+    <disable_collisions link1="1_Link" link2="4_Link" reason="Never"/>
+    <disable_collisions link1="1_Link" link2="base_link" reason="Adjacent"/>
+    <disable_collisions link1="2_Link" link2="3_Link" reason="Adjacent"/>
+    <disable_collisions link1="2_Link" link2="4_Link" reason="Never"/>
+    <disable_collisions link1="3_Link" link2="4_Link" reason="Adjacent"/>
+    <disable_collisions link1="3_Link" link2="5_Link" reason="Never"/>
+    <disable_collisions link1="4_Link" link2="5_Link" reason="Adjacent"/>
+    <disable_collisions link1="4_Link" link2="6_Link" reason="Never"/>
+    <disable_collisions link1="4_Link" link2="gripper_link" reason="Never"/>
+    <disable_collisions link1="4_Link" link2="jetcocam" reason="Never"/>
+    <disable_collisions link1="5_Link" link2="6_Link" reason="Adjacent"/>
+    <disable_collisions link1="5_Link" link2="gripper_link" reason="Never"/>
+    <disable_collisions link1="5_Link" link2="jetcocam" reason="Never"/>
+    <disable_collisions link1="6_Link" link2="gripper_link" reason="Adjacent"/>
+    <disable_collisions link1="6_Link" link2="jetcocam" reason="Adjacent"/>
+    <disable_collisions link1="gripper_link" link2="jetcocam" reason="Default"/>
+</robot>
