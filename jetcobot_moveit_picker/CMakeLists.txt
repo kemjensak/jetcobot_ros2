@@ -17,6 +17,7 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_action REQUIRED)
 find_package(control_msgs REQUIRED)
+find_package(std_msgs REQUIRED)
 find_package(moveit_core REQUIRED)
 find_package(moveit_ros_planning REQUIRED)
 find_package(moveit_ros_planning_interface REQUIRED)
@@ -34,6 +35,7 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
   ament_cmake
   rclcpp
   rclcpp_action
+  std_msgs
   tf2_geometry_msgs
   tf2_ros
   moveit_core
