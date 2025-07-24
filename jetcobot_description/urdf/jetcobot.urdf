@@ -467,7 +467,7 @@
     </inertial>
     <visual>
       <origin
-        xyz="0 0 -0.01"
+        xyz="0 0.01 0"
         rpy="0 -1.5707963 1.5707963" />
       <geometry>
         <mesh
@@ -481,7 +481,7 @@
     </visual>
     <collision>
       <origin
-        xyz="0 0 -0.01"
+        xyz="0 0.01 0"
         rpy="0 -1.5707963 1.5707963" />
       <geometry>
         <mesh
