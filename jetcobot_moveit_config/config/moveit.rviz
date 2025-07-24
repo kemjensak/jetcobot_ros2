@@ -1,6 +1,5 @@
 Panels:
   - Class: rviz_common/Displays
-    Help Height: 70
     Name: Displays
     Property Tree Widget:
       Expanded:
@@ -12,30 +11,12 @@ Panels:
   - Class: rviz_common/Help
     Name: Help
   - Class: rviz_common/Views
-    Expanded:
-      - /Current View1
     Name: Views
     Splitter Ratio: 0.5
 Visualization Manager:
-  Class: ""
   Displays:
-    - Alpha: 0.5
-      Cell Size: 1
-      Class: rviz_default_plugins/Grid
-      Color: 160; 160; 164
-      Enabled: true
-      Line Style:
-        Line Width: 0.029999999329447746
-        Value: Lines
+    - Class: rviz_default_plugins/Grid
       Name: Grid
-      Normal Cell Count: 0
-      Offset:
-        X: 0
-        Y: 0
-        Z: 0
-      Plane: XY
-      Plane Cell Count: 10
-      Reference Frame: <Fixed Frame>
       Value: true
     - Acceleration_Scaling_Factor: 0.1
       Class: moveit_rviz_plugin/MotionPlanning
@@ -123,13 +104,7 @@ Visualization Manager:
             Show Trail: false
             Value: true
         Loop Animation: true
-        Robot Alpha: 0.5
-        Robot Color: 150; 50; 150
-        Show Robot Collision: false
-        Show Robot Visual: true
-        Show Trail: false
         State Display Time: 0.05 s
-        Trail Step Size: 1
         Trajectory Topic: display_planned_path
         Use Sim Time: false
       Planning Metrics:
@@ -155,11 +130,6 @@ Visualization Manager:
       Robot Description: robot_description
       Scene Geometry:
         Scene Alpha: 1
-        Scene Color: 50; 230; 50
-        Scene Display Time: 0.009999999776482582
-        Show Scene Geometry: true
-        Voxel Coloring: Z-Axis
-        Voxel Rendering: Occupied Voxels
       Scene Robot:
         Attached Body Color: 150; 50; 150
         Links:
@@ -223,8 +193,6 @@ Visualization Manager:
             Show Trail: false
             Value: true
         Robot Alpha: 0.5
-        Show Robot Collision: false
-        Show Robot Visual: true
       Value: true
       Velocity_Scaling_Factor: 0.1
     - Class: rviz_default_plugins/TF
@@ -287,12 +255,8 @@ Visualization Manager:
   Name: root
   Tools:
     - Class: rviz_default_plugins/Interact
-      Hide Inactive Objects: true
     - Class: rviz_default_plugins/MoveCamera
     - Class: rviz_default_plugins/Select
-  Transformation:
-    Current:
-      Class: rviz_default_plugins/TF
   Value: true
   Views:
     Current:
