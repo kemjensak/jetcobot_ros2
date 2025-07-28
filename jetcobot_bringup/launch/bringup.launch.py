@@ -62,7 +62,7 @@ def generate_launch_description():
         name="apriltag_node",
         output="screen",
         parameters=[PathJoinSubstitution([
-                FindPackageShare('apriltag_ros'), 'cfg', 'tags_36h11.yaml'])
+                FindPackageShare('apriltag_ros'), 'cfg', 'tags_41h12.yaml'])
         ],
         remappings=[
             ('camera_info', '/camera_info'),

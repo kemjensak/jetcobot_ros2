@@ -31,8 +31,8 @@ public:
     {
         // Initialize MoveGroupInterface after the object is fully constructed
         move_group_interface_ = std::make_shared<moveit::planning_interface::MoveGroupInterface>(shared_from_this(), "arm_group");
-        move_group_interface_->setMaxAccelerationScalingFactor(1.0);
-        move_group_interface_->setMaxVelocityScalingFactor(1.0);
+        move_group_interface_->setMaxAccelerationScalingFactor(0.6);
+        move_group_interface_->setMaxVelocityScalingFactor(0.9);
         move_group_interface_->setPlanningTime(15.0);  // Set planning time to 15 seconds
         move_group_interface_->setNumPlanningAttempts(100);
         
@@ -45,7 +45,7 @@ public:
 
         // Scan and store all visible AprilTags before starting operations
         if (!scanAndStoreAllTags()) {
-            RCLCPP_ERROR(get_logger(), "No AprilTags found! Make sure tag36h11 detection is running.");
+            RCLCPP_ERROR(get_logger(), "No AprilTags found! Make sure tagStandard41h12 detection is running.");
             return false;
         }
         
@@ -53,31 +53,36 @@ public:
         // Pick from tag ID 6 and place at tag ID 9
         
         // Pick operation
-        // int pick_tag_id = 9;
-        // if (!executePick(pick_tag_id)) {
-        //     RCLCPP_ERROR(get_logger(), "Pick operation failed for tag ID %d", pick_tag_id);
-        //     return false;
-        // }
+        int pick_tag_id = 9;
+        if (!executePick(pick_tag_id)) {
+            RCLCPP_ERROR(get_logger(), "Pick operation failed for tag ID %d", pick_tag_id);
+            return false;
+        }
         
-        // // Place operation
-        // int place_tag_id = 6;
-        // if (!executePlace(place_tag_id)) {
-        //     RCLCPP_ERROR(get_logger(), "Place operation failed for tag ID %d", place_tag_id);
-        //     return false;
-        // }
+        // Place operation
+        int place_tag_id = 7;
+        if (!executePlace(place_tag_id)) {
+            RCLCPP_ERROR(get_logger(), "Place operation failed for tag ID %d", place_tag_id);
+            return false;
+        }
 
-        // // Return to home position
-        // if (!moveToHome()) {
-        //     RCLCPP_WARN(get_logger(), "Failed to return to home position");
-        // }
+        // Return to home position
+        if (!moveToHome()) {
+            RCLCPP_WARN(get_logger(), "Failed to return to home position");
+        }
+        
+        if (!scanAndStoreAllTags()) {
+            RCLCPP_ERROR(get_logger(), "No AprilTags found! Make sure tagStandard41h12 detection is running.");
+            return false;
+        }
 
-        int pick_tag_id = 4;
+        pick_tag_id = 6;
         if (!executePick(pick_tag_id)) {
             RCLCPP_ERROR(get_logger(), "Pick operation failed for tag ID %d", pick_tag_id);
             return false;
         }
 
-        int place_tag_id = 9;
+        place_tag_id = 9;
         if (!executePlace(place_tag_id)) {
             RCLCPP_ERROR(get_logger(), "Place operation failed for tag ID %d", place_tag_id);
             return false;
@@ -108,12 +113,12 @@ private:
     static constexpr double CAM_HEIGHT = 0.07;  // 7cm above TCP
     static constexpr double PICK_HEIGHT = -0.02;    // 0 above tag
     static constexpr double LIFT_HEIGHT = 0.10;     // 10cm lift
-    static constexpr double PLACE_HEIGHT = 0.02;   // 2cm above tag for placing
-    static constexpr double EEF_STEP = 0.01;
-    static constexpr double MIN_PATH_FRACTION = 0.8;
+    static constexpr double PLACE_HEIGHT = 0.02;  // 2cm above tag for placing
+    static constexpr double EEF_STEP = 0.005;
+    static constexpr double MIN_PATH_FRACTION = 0.6;
     static constexpr int GRIPPER_CLOSE_DELAY_MS = 1500;
     static constexpr int STABILIZE_DELAY_MS = 1000;
-    static constexpr int OPERATION_DELAY_MS = 2000;
+    static constexpr int OPERATION_DELAY_MS = 3000;
 
     bool scanAndStoreAllTags()
     {
@@ -124,7 +129,7 @@ private:
         
         // Try to find all visible tags
         for (int tag_id = 0; tag_id < 10; ++tag_id) {
-            std::string tag_frame = "tag36h11:" + std::to_string(tag_id);
+            std::string tag_frame = "tagStandard41h12:" + std::to_string(tag_id);
             
             try {
                 geometry_msgs::msg::TransformStamped tag_transform = tf_buffer_->lookupTransform(
@@ -169,9 +174,9 @@ private:
     {
         RCLCPP_INFO(get_logger(), "Searching for AprilTag...");
         
-        // Try to find any tag36h11 transform
+        // Try to find any tagStandard41h12 transform
         for (int tag_id = 0; tag_id < 100; ++tag_id) {
-            std::string tag_frame = "tag36h11:" + std::to_string(tag_id);
+            std::string tag_frame = "tagStandard41h12:" + std::to_string(tag_id);
             
             try {
                 tag_transform = tf_buffer_->lookupTransform(
@@ -313,7 +318,7 @@ private:
         // return false;
         RCLCPP_INFO(get_logger(), "Checking if tag ID %d is visible for pose update...", tag_id);
         
-        std::string tag_frame = "tag36h11:" + std::to_string(tag_id);
+        std::string tag_frame = "tagStandard41h12:" + std::to_string(tag_id);
         
         try {
             geometry_msgs::msg::TransformStamped updated_transform = tf_buffer_->lookupTransform(
@@ -401,7 +406,7 @@ private:
         
         // Try to find the same tag again
         for (int tag_id = 0; tag_id < 100; ++tag_id) {
-            std::string tag_frame = "tag36h11:" + std::to_string(tag_id);
+            std::string tag_frame = "tagStandard41h12:" + std::to_string(tag_id);
             
             try {
                 updated_tag_transform = tf_buffer_->lookupTransform(
@@ -453,7 +458,7 @@ private:
 
     bool findSpecificAprilTag(int tag_id, geometry_msgs::msg::TransformStamped& tag_transform)
     {
-        std::string tag_frame = "tag36h11:" + std::to_string(tag_id);
+        std::string tag_frame = "tagStandard41h12:" + std::to_string(tag_id);
         
         try {
             tag_transform = tf_buffer_->lookupTransform(
