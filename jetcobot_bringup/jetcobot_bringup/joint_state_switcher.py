@@ -17,45 +17,44 @@ class JointStateSwitcher(Node):
             JointState,
             'joint_state_broadcaster/joint_states',
             self.fake_joint_states_callback,
-            10
+            1
         )
         
         self.real_joint_states_sub = self.create_subscription(
             JointState,
             'real_joint_states',
             self.real_joint_states_callback,
-            10
+            1
         )
         
         self.move_action_status_sub = self.create_subscription(
             GoalStatusArray,
             '/arm_group_controller/follow_joint_trajectory/_action/status',
             self.move_action_status_callback,
-            10
+            1
         )
         
         # 발행자 설정
         self.joint_states_pub = self.create_publisher(
             JointState,
             'joint_states',
-            10
+            1
         )
         
         self.get_angles_cmd_pub = self.create_publisher(
             Bool,
             'get_angles_cmd',
-            10
+            1
         )
         
         # 상태 변수들
         self.latest_fake_joint_states = None
         self.latest_real_joint_states = None
         self.current_status = None
-        self.previous_status = None
-        self.using_real_states = False
+        self.using_real_states = True
         
-        # 40Hz 타이머 (0.025초마다 실행)
-        self.timer = self.create_timer(0.025, self.timer_callback)
+        # 40Hz 타이머 (0.05초마다 실행)
+        self.timer = self.create_timer(0.05, self.timer_callback)
         
         self.get_logger().info('Joint State Switcher node initialized')
     
@@ -90,32 +89,20 @@ class JointStateSwitcher(Node):
         if not msg.status_list:
             return
         
-        # 이전 상태 저장
-        self.previous_status = self.current_status
-        
         # 현재 상태 업데이트 (가장 최신 status 사용)
         self.current_status = msg.status_list[-1].status
-        
-        # self.get_logger().info(f'Status changed: {self.previous_status} -> {self.current_status}')
-        
-        # 상태 변화 감지: 2에서 4로 변경
-        if self.previous_status == 2 and self.current_status == 4:
-            # self.get_logger().info('Status changed from 2 to 4, switching to real joint states')
-            
+        # 상태 감지: 2(EXECUTING)이 아닐 경우
+        if self.current_status != 2:
             # get_angles_cmd 토픽에 아무 값이나 발행
-            # time.sleep(0.2)  # 잠시 대기
             cmd_msg = Bool()
             self.get_angles_cmd_pub.publish(cmd_msg)
-            # self.get_logger().info('Published get_angles_cmd')
-            
             # real_joint_states 사용 모드로 전환
             self.using_real_states = True
         
-        # 상태가 2로 돌아왔을 때
+        # 2(EXECUTING) 상태일 경우
         else:
             self.latest_real_joint_states = None  # real joint states 초기화
-            # self.get_logger().info('Status is 2, switching to fake joint states')
-            self.using_real_states = False
+            self.using_real_states = False  # fake_joint_states 사용 모드로 전환
 
 
 def main(args=None):
