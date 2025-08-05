@@ -1,6 +1,4 @@
 /**:
     ros__parameters:
-        camera_name: "jetcocam"
-        frame_id: "jetcocam"
-        camera_info_url: "package://jetcobot_bringup/config/jetcocam_1_calib.yaml"
+        camera_info_url: "package://jetcobot_bringup/config/ov3360_1_calib.yaml"
         publish_rate: 1.0

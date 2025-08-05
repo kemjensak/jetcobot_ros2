@@ -515,4 +515,13 @@
       <child link="TCP"/>
       <origin xyz="0.05 0 0.0177" rpy="-1.5707963 0 -1.5707963"/>
   </joint>
+
+  <link name="ov3360">
+  </link>
+  <joint name="ov3360_joint" type="fixed">
+    <parent link="jetcocam"/>
+    <child link="ov3360"/>
+    <origin xyz="0.0 0.0 0.0" rpy="0 0 3.141592"/>
+  </joint>
+
 </robot>

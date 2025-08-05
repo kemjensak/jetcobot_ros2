@@ -37,8 +37,8 @@ def generate_launch_description():
             ])
         ]),
         launch_arguments={
-            'camera_name': 'jetcocam',
-            'frame_id': 'jetcocam'
+            'camera_name': 'ov3360',
+            'frame_id': 'ov3360'
         }.items()
     )
 
