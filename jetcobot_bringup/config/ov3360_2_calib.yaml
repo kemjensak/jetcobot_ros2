@@ -1,0 +1,25 @@
+image_width: 2048
+image_height: 1536
+camera_name: jetcocam
+camera_matrix:
+  rows: 3
+  cols: 3
+  data: [1470.52468,    0.     , 1101.4257 ,
+            0.     , 1468.05761,  682.17243,
+            0.     ,    0.     ,    1.     ]
+distortion_coefficients:
+  rows: 1
+  cols: 5
+  data: [-0.313189, 0.087017, -0.002519, -0.001188, 0.000000]
+rectification_matrix:
+  rows: 3
+  cols: 3
+  data: [1., 0., 0.,
+         0., 1., 0.,
+         0., 0., 1.]
+projection_matrix:
+  rows: 3
+  cols: 4
+  data: [1198.73962,    0.     , 1132.25591,    0.     ,
+            0.     , 1316.23047,  657.4048 ,    0.     ,
+            0.     ,    0.     ,    1.     ,    0.     ]
