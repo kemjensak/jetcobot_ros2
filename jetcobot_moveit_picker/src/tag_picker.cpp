@@ -13,6 +13,7 @@
 #include <tf2/LinearMath/Vector3.h>
 #include <geometry_msgs/msg/transform_stamped.hpp>
 #include <std_msgs/msg/bool.hpp>
+#include <std_msgs/msg/int32.hpp> 
 
 class TagPicker : public rclcpp::Node
 {
@@ -22,7 +23,7 @@ public:
                   tf_listener_(std::make_shared<tf2_ros::TransformListener>(*tf_buffer_))
     {
         // Create gripper command publisher
-        gripper_pub_ = create_publisher<std_msgs::msg::Bool>("/gripper_command", 10);
+        gripper_pub_ = create_publisher<std_msgs::msg::Int32>("/gripper_command", 10);
         
         RCLCPP_INFO(get_logger(), "TagPicker initialized successfully");
     }
@@ -41,7 +42,7 @@ public:
             RCLCPP_WARN(get_logger(), "Failed to move to home position, continuing anyway...");
         }
 
-        controlGripper(false);  // Close gripper to ensure it's ready
+        controlGripper(100);  // Close gripper to ensure it's ready // Open gripper fully to start fresh (Int ver 100)
 
         // Scan and store all visible AprilTags before starting operations
         if (!scanAndStoreAllTags()) {
@@ -53,14 +54,14 @@ public:
         // Pick from tag ID 6 and place at tag ID 9
         
         // Pick operation
-        int pick_tag_id = 9;
+        int pick_tag_id = 2;
         if (!executePick(pick_tag_id)) {
             RCLCPP_ERROR(get_logger(), "Pick operation failed for tag ID %d", pick_tag_id);
             return false;
         }
         
         // Place operation
-        int place_tag_id = 7;
+        int place_tag_id = 5;
         if (!executePlace(place_tag_id)) {
             RCLCPP_ERROR(get_logger(), "Place operation failed for tag ID %d", place_tag_id);
             return false;
@@ -76,13 +77,13 @@ public:
             return false;
         }
 
-        pick_tag_id = 6;
+        pick_tag_id = 8;
         if (!executePick(pick_tag_id)) {
             RCLCPP_ERROR(get_logger(), "Pick operation failed for tag ID %d", pick_tag_id);
             return false;
         }
 
-        place_tag_id = 9;
+        place_tag_id = 2;
         if (!executePlace(place_tag_id)) {
             RCLCPP_ERROR(get_logger(), "Place operation failed for tag ID %d", place_tag_id);
             return false;
@@ -103,7 +104,7 @@ private:
     std::shared_ptr<moveit::planning_interface::MoveGroupInterface> move_group_interface_;
     std::unique_ptr<tf2_ros::Buffer> tf_buffer_;
     std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
-    rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr gripper_pub_;
+    rclcpp::Publisher<std_msgs::msg::Int32>::SharedPtr gripper_pub_;
     
     // Storage for tag transforms
     std::map<int, geometry_msgs::msg::TransformStamped> stored_tag_transforms_;
@@ -441,17 +442,20 @@ private:
         }
     }
 
-    void controlGripper(bool close)
+    void controlGripper(int close_value) // Bool: close(true) or open(false) -> Int: 100 (open fully) or 0 (close) // 반대 
     {
-        auto gripper_msg = std_msgs::msg::Bool();
-        gripper_msg.data = close;
+        auto gripper_msg = std_msgs::msg::Int32();
+        gripper_msg.data = close_value;
         gripper_pub_->publish(gripper_msg);
         
-        if (close) {
-            RCLCPP_INFO(get_logger(), "Closing gripper...");
+        if (close_value == 100) {
+            RCLCPP_INFO(get_logger(), "Opening gripper fully...");
+            std::this_thread::sleep_for(std::chrono::milliseconds(OPERATION_DELAY_MS));
+        } else if (close_value == 0) {
+            RCLCPP_INFO(get_logger(), "Closing gripper fully...");
             std::this_thread::sleep_for(std::chrono::milliseconds(GRIPPER_CLOSE_DELAY_MS));
         } else {
-            RCLCPP_INFO(get_logger(), "Opening gripper...");
+            RCLCPP_INFO(get_logger(), "Setting gripper position to %d", close_value);
             std::this_thread::sleep_for(std::chrono::milliseconds(OPERATION_DELAY_MS));
         }
     }
@@ -523,7 +527,7 @@ private:
         std::this_thread::sleep_for(std::chrono::milliseconds(STABILIZE_DELAY_MS));
         
         // Close gripper
-        controlGripper(true);
+        controlGripper(0); // Close gripper fully
 
         // Lift object
         auto lift_pose = final_target_pose;
@@ -583,7 +587,7 @@ private:
         std::this_thread::sleep_for(std::chrono::milliseconds(STABILIZE_DELAY_MS));
         
         // Open gripper to release object
-        controlGripper(false);
+        controlGripper(100); // Open gripper fully
         
         // Lift up slightly after placing
         auto lift_after_place_pose = place_pose;

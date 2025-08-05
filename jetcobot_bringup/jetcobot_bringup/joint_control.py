@@ -20,7 +20,7 @@ class Joint_controller(Node):
             1
         )
         self.sub_grippper = self.create_subscription(
-            Bool,
+            Int32,
             "gripper_command",
             self.gripper_callback,
             1
@@ -67,11 +67,11 @@ class Joint_controller(Node):
 
         self.mc.send_angles(data_list, 100, _async=True)
         
-    def gripper_callback(self, msg):
-        self.gripper_command = int(msg.data)
+    def gripper_callback(self, msg): ## Int 메세지 수신 # gripper_command는 0~100 범위
+        self.gripper_command = int(msg.data) ## close(true) or open(false) -> Int
         for attempt in range(5):
             # time.sleep(0.1)
-            self.mc.set_gripper_state(self.gripper_command, 100)
+            self.mc.set_gripper_value(self.gripper_command, 100) # set_gripper_state 대신 set_gripper_value 사용  # gripper_value, speed
             result = self.mc.get_gripper_value(1)
             if result != -1:
                 # result를 Int32 메시지로 publish
@@ -79,7 +79,7 @@ class Joint_controller(Node):
                 gripper_state_msg.data = int(result)
                 self.gripper_state_pub.publish(gripper_state_msg)
                 
-                self.get_logger().info(f"Set gripper command: {int(msg.data)}, Gripper state: {result}")
+                self.get_logger().info(f"Set gripper command: {self.gripper_command}, Gripper state: {result}")
                 # self.get_logger().info(f"Gripper state successfully set to {result} on attempt {attempt + 1}")'
                 break
             else:
