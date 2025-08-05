@@ -2,6 +2,7 @@
 #include <chrono>
 #include <thread>
 #include <map>
+#include <set>
 
 #include <rclcpp/rclcpp.hpp>
 #include <moveit/move_group_interface/move_group_interface.hpp>
@@ -14,6 +15,7 @@
 #include <geometry_msgs/msg/transform_stamped.hpp>
 #include <std_msgs/msg/bool.hpp>
 #include <std_msgs/msg/int32.hpp> 
+#include <apriltag_msgs/msg/april_tag_detection_array.hpp>
 
 class TagPicker : public rclcpp::Node
 {
@@ -105,21 +107,28 @@ private:
     std::unique_ptr<tf2_ros::Buffer> tf_buffer_;
     std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
     rclcpp::Publisher<std_msgs::msg::Int32>::SharedPtr gripper_pub_;
+    rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr gripper_pub_;
+    rclcpp::Subscription<apriltag_msgs::msg::AprilTagDetectionArray>::SharedPtr detection_sub_;
     
     // Storage for tag transforms
     std::map<int, geometry_msgs::msg::TransformStamped> stored_tag_transforms_;
+    
+    // Detection-related storage
+    std::set<int> detected_tag_ids_;
+    std::chrono::steady_clock::time_point detection_start_time_;
+    bool is_collecting_detections_ = false;
 
     // Constants
-    static constexpr double APPROACH_HEIGHT = 0.09;  // 9cm above tag
-    static constexpr double CAM_HEIGHT = 0.07;  // 7cm above TCP
-    static constexpr double PICK_HEIGHT = -0.02;    // 0 above tag
-    static constexpr double LIFT_HEIGHT = 0.10;     // 10cm lift
-    static constexpr double PLACE_HEIGHT = 0.02;  // 2cm above tag for placing
+    static constexpr double APPROACH_HEIGHT = 0.05;  // 9cm above tag
+    static constexpr double CAM_HEIGHT = 0.08;  // 8cm above TCP
+    static constexpr double PICK_HEIGHT = -0.01;    // 0 above tag
+    static constexpr double LIFT_HEIGHT = 0.07;     // 7cm lift
+    static constexpr double PLACE_HEIGHT = 0.025;  // 1cm above tag for placing
     static constexpr double EEF_STEP = 0.005;
-    static constexpr double MIN_PATH_FRACTION = 0.6;
-    static constexpr int GRIPPER_CLOSE_DELAY_MS = 1500;
-    static constexpr int STABILIZE_DELAY_MS = 1000;
-    static constexpr int OPERATION_DELAY_MS = 3000;
+    static constexpr double MIN_PATH_FRACTION = 0.4;
+    static constexpr int GRIPPER_CLOSE_DELAY_MS = 1000;
+    static constexpr int STABILIZE_DELAY_MS = 500;
+    static constexpr int OPERATION_DELAY_MS = 1500;
 
     bool scanAndStoreAllTags()
     {
