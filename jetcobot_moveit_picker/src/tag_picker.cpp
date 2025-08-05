@@ -51,11 +51,14 @@ public:
 
         controlGripper(100);  // Close gripper to ensure it's ready // Open gripper fully to start fresh (Int ver 100)
 
-        // Scan and store all visible AprilTags before starting operations
-        if (!scanAndStoreAllTags()) {
-            RCLCPP_ERROR(get_logger(), "No AprilTags found! Make sure tagStandard41h12 detection is running.");
+        // Use detection-based tag discovery
+        if (!collectDetectedTagsAndAcquireTransforms(1.0)) {
+            RCLCPP_ERROR(get_logger(), "No AprilTags detected! Make sure AprilTag detection is running on /detections topic.");
             return false;
         }
+        
+        // Show all detected tags
+        printDetectedTags();
         
         // Example usage of new pick and place functions
         // Pick from tag ID 6 and place at tag ID 9
@@ -79,10 +82,14 @@ public:
             RCLCPP_WARN(get_logger(), "Failed to return to home position");
         }
         
-        if (!scanAndStoreAllTags()) {
-            RCLCPP_ERROR(get_logger(), "No AprilTags found! Make sure tagStandard41h12 detection is running.");
+        // Re-scan for tags before second operation
+        if (!collectDetectedTagsAndAcquireTransforms(1.0)) {
+            RCLCPP_ERROR(get_logger(), "No AprilTags detected for second operation! Make sure AprilTag detection is running on /detections topic.");
             return false;
         }
+        
+        // Show all detected tags for second operation
+        printDetectedTags();
 
         pick_tag_id = 8;
         if (!executePick(pick_tag_id)) {
