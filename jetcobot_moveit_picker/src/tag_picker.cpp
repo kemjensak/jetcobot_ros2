@@ -185,6 +185,123 @@ private:
         }
     }
 
+    void detectionCallback(const apriltag_msgs::msg::AprilTagDetectionArray::SharedPtr msg)
+    {
+        if (!is_collecting_detections_) {
+            return;
+        }
+        
+        // Add detected tag IDs to our collection
+        for (const auto& detection : msg->detections) {
+            detected_tag_ids_.insert(detection.id);
+            RCLCPP_INFO(get_logger(), "Detected tag ID: %d", detection.id);
+        }
+    }
+
+    bool collectDetectedTagsAndAcquireTransforms(double collection_time_seconds = 1.0)
+    {
+        RCLCPP_INFO(get_logger(), "Starting tag detection collection for %.1f seconds...", collection_time_seconds);
+        
+        // Clear previous detections and start collection
+        detected_tag_ids_.clear();
+        stored_tag_transforms_.clear();
+        is_collecting_detections_ = true;
+        detection_start_time_ = std::chrono::steady_clock::now();
+        
+        // Collect detections for the specified time
+        auto collection_duration = std::chrono::duration<double>(collection_time_seconds);
+        while (rclcpp::ok()) {
+            auto current_time = std::chrono::steady_clock::now();
+            auto elapsed = current_time - detection_start_time_;
+            
+            if (elapsed >= collection_duration) {
+                break;
+            }
+            
+            // Spin to process callbacks
+            rclcpp::spin_some(shared_from_this());
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        }
+        
+        // Stop collecting detections
+        is_collecting_detections_ = false;
+        
+        RCLCPP_INFO(get_logger(), "Detection collection completed. Found %zu unique tag IDs:", detected_tag_ids_.size());
+        for (int tag_id : detected_tag_ids_) {
+            RCLCPP_INFO(get_logger(), "  - Tag ID: %d", tag_id);
+        }
+        
+        // Now acquire transforms for all detected tags
+        int transforms_acquired = 0;
+        for (int tag_id : detected_tag_ids_) {
+            std::string tag_frame;
+            
+            // Try different tag frame formats
+            std::vector<std::string> possible_frame_formats = {
+                "tagStandard41h12:" + std::to_string(tag_id),
+                "tag_" + std::to_string(tag_id),
+                "apriltag_" + std::to_string(tag_id)
+            };
+            
+            bool transform_found = false;
+            for (const auto& frame_format : possible_frame_formats) {
+                try {
+                    geometry_msgs::msg::TransformStamped tag_transform = tf_buffer_->lookupTransform(
+                        "base_link",  // target frame
+                        frame_format,  // source frame  
+                        tf2::TimePointZero,  // get latest available
+                        std::chrono::seconds(1));
+                    
+                    // Store the transform
+                    stored_tag_transforms_[tag_id] = tag_transform;
+                    transforms_acquired++;
+                    transform_found = true;
+                    
+                    RCLCPP_INFO(get_logger(), "Acquired transform for tag ID %d (%s): x=%.3f, y=%.3f, z=%.3f", 
+                               tag_id, frame_format.c_str(),
+                               tag_transform.transform.translation.x,
+                               tag_transform.transform.translation.y,
+                               tag_transform.transform.translation.z);
+                    break;
+                }
+                catch (tf2::TransformException &ex) {
+                    continue;  // Try next format
+                }
+            }
+            
+            if (!transform_found) {
+                RCLCPP_WARN(get_logger(), "Could not acquire transform for detected tag ID %d", tag_id);
+            }
+        }
+        
+        RCLCPP_INFO(get_logger(), "Successfully acquired transforms for %d out of %zu detected tags", 
+                   transforms_acquired, detected_tag_ids_.size());
+        
+        return transforms_acquired > 0;
+    }
+
+    std::set<int> getDetectedTagIds() const
+    {
+        return detected_tag_ids_;
+    }
+
+    void printDetectedTags() const
+    {
+        RCLCPP_INFO(get_logger(), "Currently detected tag IDs (%zu total):", detected_tag_ids_.size());
+        for (int tag_id : detected_tag_ids_) {
+            RCLCPP_INFO(get_logger(), "  - Tag ID: %d", tag_id);
+        }
+    }
+
+    // Method to manually trigger detection and show results (useful for testing)
+    bool scanForTagsAndShowResults(double scan_time = 1.0)
+    {
+        RCLCPP_INFO(get_logger(), "Manual tag scan initiated...");
+        bool success = collectDetectedTagsAndAcquireTransforms(scan_time);
+        printDetectedTags();
+        return success;
+    }
+
     bool findAprilTag(geometry_msgs::msg::TransformStamped& tag_transform)
     {
         RCLCPP_INFO(get_logger(), "Searching for AprilTag...");
