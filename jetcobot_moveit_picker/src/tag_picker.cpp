@@ -27,6 +27,11 @@ public:
         // Create gripper command publisher
         gripper_pub_ = create_publisher<std_msgs::msg::Int32>("/gripper_command", 10);
         
+        // Create subscriber for AprilTag detections
+        detection_sub_ = create_subscription<apriltag_msgs::msg::AprilTagDetectionArray>(
+            "/detections", 10,
+            std::bind(&TagPicker::detectionCallback, this, std::placeholders::_1));
+        
         RCLCPP_INFO(get_logger(), "TagPicker initialized successfully");
     }
 
