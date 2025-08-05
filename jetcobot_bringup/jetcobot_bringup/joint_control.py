@@ -40,7 +40,7 @@ class Joint_controller(Node):
         )
 
         self.pub = self.create_publisher(JointState, "real_joint_states", 1)
-        self.gripper_state_pub = self.create_publisher(Int32, "gripper_state", 1)
+        self.gripper_feedback_pub = self.create_publisher(Int32, "gripper_feedback", 1)
         self.gripper_command = None
         
         # move_action 상태 추적
@@ -72,12 +72,12 @@ class Joint_controller(Node):
         for attempt in range(5):
             # time.sleep(0.1)
             self.mc.set_gripper_value(self.gripper_command, 100) # set_gripper_state 대신 set_gripper_value 사용  # gripper_value, speed
-            result = self.mc.get_gripper_value(1)
+            result = self.mc.get_gripper_value() # gripper_value값 받아오기
             if result != -1:
                 # result를 Int32 메시지로 publish
-                gripper_state_msg = Int32()
-                gripper_state_msg.data = int(result)
-                self.gripper_state_pub.publish(gripper_state_msg)
+                gripper_feedback_msg = Int32()
+                gripper_feedback_msg.data = int(result)
+                self.gripper_feedback_pub.publish(gripper_feedback_msg)
                 
                 self.get_logger().info(f"Set gripper command: {self.gripper_command}, Gripper state: {result}")
                 # self.get_logger().info(f"Gripper state successfully set to {result} on attempt {attempt + 1}")'
