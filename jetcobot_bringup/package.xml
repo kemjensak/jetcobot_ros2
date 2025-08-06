@@ -4,7 +4,7 @@
   <name>jetcobot_bringup</name>
   <version>0.0.0</version>
   <description>TODO: Package description</description>
-  <maintainer email="jinseok.kim970@gmail.com">Jinseo Kim</maintainer>
+  <maintainer email="jinseok.kim970@gmail.com">Jinseok Kim</maintainer>
   <license>TODO: License declaration</license>
 
   <depend>rclpy</depend>
