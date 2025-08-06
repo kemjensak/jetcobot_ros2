@@ -8,8 +8,10 @@
 #include <set>
 #include <vector>
 #include <string>
+#include <sstream>
 
 #include <rclcpp/rclcpp.hpp>
+#include <rclcpp_action/rclcpp_action.hpp>
 #include <moveit/move_group_interface/move_group_interface.hpp>
 #include <tf2_ros/transform_listener.h>
 #include <tf2_ros/buffer.h>
@@ -23,10 +25,14 @@
 #include <std_msgs/msg/int32.hpp>
 #include <std_msgs/msg/string.hpp>
 #include <apriltag_msgs/msg/april_tag_detection_array.hpp>
+#include <jetcobot_interfaces/action/picker_action.hpp>
 
 class TagPicker : public rclcpp::Node
 {
 public:
+    using PickerAction = jetcobot_interfaces::action::PickerAction;
+    using GoalHandlePickerAction = rclcpp_action::ServerGoalHandle<PickerAction>;
+
     /**
      * @brief Constructor for TagPicker
      */
@@ -57,7 +63,7 @@ private:
     std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
     rclcpp::Publisher<std_msgs::msg::Int32>::SharedPtr gripper_pub_;
     rclcpp::Subscription<apriltag_msgs::msg::AprilTagDetectionArray>::SharedPtr detection_sub_;
-    rclcpp::Subscription<std_msgs::msg::String>::SharedPtr command_sub_;
+    rclcpp_action::Server<PickerAction>::SharedPtr action_server_;
     
     // Storage for tag transforms
     std::map<int, geometry_msgs::msg::TransformStamped> stored_tag_transforms_;
@@ -69,10 +75,27 @@ private:
 
     // Callback functions
     /**
-     * @brief Callback for command messages
-     * @param msg Command message
+     * @brief Goal callback for action server
      */
-    void commandCallback(const std_msgs::msg::String::SharedPtr msg);
+    rclcpp_action::GoalResponse handle_goal(
+        const rclcpp_action::GoalUUID & uuid,
+        std::shared_ptr<const PickerAction::Goal> goal);
+
+    /**
+     * @brief Cancel callback for action server
+     */
+    rclcpp_action::CancelResponse handle_cancel(
+        const std::shared_ptr<GoalHandlePickerAction> goal_handle);
+
+    /**
+     * @brief Accept callback for action server
+     */
+    void handle_accepted(const std::shared_ptr<GoalHandlePickerAction> goal_handle);
+
+    /**
+     * @brief Execute the action goal
+     */
+    void execute_goal(const std::shared_ptr<GoalHandlePickerAction> goal_handle);
 
     /**
      * @brief Callback for AprilTag detection messages
@@ -174,6 +197,30 @@ private:
      * @return true if successful, false otherwise
      */
     bool executePlace(int target_tag_id);
+
+    /**
+     * @brief Execute place operation at specified TF frame location
+     * @param target_tf_name TF frame name to place at
+     * @return true if successful, false otherwise
+     */
+    bool executePlace(const std::string& target_tf_name);
+
+    // Command handling functions
+    /**
+     * @brief Handle HOME command
+     */
+    bool handleHomeCommand(const std::shared_ptr<GoalHandlePickerAction> goal_handle);
+
+    /**
+     * @brief Handle SCAN command
+     */
+    bool handleScanCommand(const std::shared_ptr<GoalHandlePickerAction> goal_handle);
+
+    /**
+     * @brief Handle PICK_AND_PLACE command
+     * @param goal_handle Action goal handle
+     */
+    bool handlePickAndPlaceCommand(const std::shared_ptr<GoalHandlePickerAction> goal_handle);
 };
 
 #endif // TAG_PICKER_HPP

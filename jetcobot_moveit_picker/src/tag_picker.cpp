@@ -1,4 +1,5 @@
 #include "jetcobot_moveit_picker/tag_picker.hpp"
+#include <thread>
 
 // Constructor implementation
 TagPicker::TagPicker() : Node("tag_picker"),
@@ -14,9 +15,13 @@ TagPicker::TagPicker() : Node("tag_picker"),
         "/detections", 10,
         std::bind(&TagPicker::detectionCallback, this, std::placeholders::_1));
     
-    command_sub_ = create_subscription<std_msgs::msg::String>(
-        "/picker/command", 10,
-        std::bind(&TagPicker::commandCallback, this, std::placeholders::_1));
+    // Create action server
+    action_server_ = rclcpp_action::create_server<PickerAction>(
+        this,
+        "picker_action",
+        std::bind(&TagPicker::handle_goal, this, std::placeholders::_1, std::placeholders::_2),
+        std::bind(&TagPicker::handle_cancel, this, std::placeholders::_1),
+        std::bind(&TagPicker::handle_accepted, this, std::placeholders::_1));
 
     RCLCPP_INFO(get_logger(), "TagPicker initialized successfully");
 }
@@ -37,68 +42,85 @@ bool TagPicker::execute()
 
     controlGripper(100);  // Open gripper fully to start fresh
 
-    // Use detection-based tag discovery
-    if (!collectDetectedTagsAndAcquireTransforms(1.0)) {
-        RCLCPP_ERROR(get_logger(), "No AprilTags detected! Make sure AprilTag detection is running on /detections topic.");
-        return false;
-    }
+    RCLCPP_INFO(get_logger(), "TagPicker ready to receive action commands!");
     
-    // Show all detected tags
-    printDetectedTags();
+    // Keep the node alive to process callbacks
+    rclcpp::spin(shared_from_this());
     
-    // Example usage of new pick and place functions
-    // Pick from tag ID 9 and place at tag ID 7
-    int pick_tag_id = 9;
-    if (!executePick(pick_tag_id)) {
-        RCLCPP_ERROR(get_logger(), "Pick operation failed for tag ID %d", pick_tag_id);
-        return false;
-    }
-    
-    // Place operation
-    int place_tag_id = 7;
-    if (!executePlace(place_tag_id)) {
-        RCLCPP_ERROR(get_logger(), "Place operation failed for tag ID %d", place_tag_id);
-        return false;
-    }
-
-    // Return to home position
-    if (!moveToHome()) {
-        RCLCPP_WARN(get_logger(), "Failed to return to home position");
-    }
-    
-    // Re-scan for tags before second operation
-    if (!collectDetectedTagsAndAcquireTransforms(1.0)) {
-        RCLCPP_ERROR(get_logger(), "No AprilTags detected for second operation! Make sure AprilTag detection is running on /detections topic.");
-        return false;
-    }
-    
-    // Show all detected tags for second operation
-    printDetectedTags();
-
-    pick_tag_id = 6;
-    if (!executePick(pick_tag_id)) {
-        RCLCPP_ERROR(get_logger(), "Pick operation failed for tag ID %d", pick_tag_id);
-        return false;
-    }
-
-    place_tag_id = 9;
-    if (!executePlace(place_tag_id)) {
-        RCLCPP_ERROR(get_logger(), "Place operation failed for tag ID %d", place_tag_id);
-        return false;
-    }
-
-    // Return to home position
-    if (!moveToHome()) {
-        RCLCPP_WARN(get_logger(), "Failed to return to home position");
-    }
-    
-    RCLCPP_INFO(get_logger(), "Complete pick and place operation successful!");
     return true;
 }
 
-void TagPicker::commandCallback(const std_msgs::msg::String::SharedPtr msg)
+rclcpp_action::GoalResponse TagPicker::handle_goal(
+    const rclcpp_action::GoalUUID & uuid,
+    std::shared_ptr<const PickerAction::Goal> goal)
 {
-    RCLCPP_INFO(get_logger(), "Received command: %s", msg->data.c_str());
+    RCLCPP_INFO(get_logger(), "Received goal request: command=%s, source_id=%d, target_id=%d", 
+               goal->command.c_str(), goal->source_tag_id, goal->target_tag_id);
+    
+    // Accept all goals for now
+    (void)uuid;
+    return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
+}
+
+rclcpp_action::CancelResponse TagPicker::handle_cancel(
+    const std::shared_ptr<GoalHandlePickerAction> goal_handle)
+{
+    RCLCPP_INFO(get_logger(), "Received request to cancel goal");
+    (void)goal_handle;
+    return rclcpp_action::CancelResponse::ACCEPT;
+}
+
+void TagPicker::handle_accepted(const std::shared_ptr<GoalHandlePickerAction> goal_handle)
+{
+    // Execute goal in a separate thread
+    std::thread{std::bind(&TagPicker::execute_goal, this, goal_handle)}.detach();
+}
+
+void TagPicker::execute_goal(const std::shared_ptr<GoalHandlePickerAction> goal_handle)
+{
+    RCLCPP_INFO(get_logger(), "Executing goal");
+    
+    const auto goal = goal_handle->get_goal();
+    auto feedback = std::make_shared<PickerAction::Feedback>();
+    auto result = std::make_shared<PickerAction::Result>();
+    
+    bool success = false;
+    
+    if (goal->command == "HOME") {
+        success = handleHomeCommand(goal_handle);
+    }
+    else if (goal->command == "SCAN") {
+        success = handleScanCommand(goal_handle);
+    }
+    else if (goal->command == "PICK_AND_PLACE") {
+        success = handlePickAndPlaceCommand(goal_handle);
+    }
+    else {
+        RCLCPP_ERROR(get_logger(), "Unknown command: %s", goal->command.c_str());
+        result->success = false;
+        result->error_message = "Unknown command: " + goal->command;
+        goal_handle->abort(result);
+        return;
+    }
+    
+    // Set final result
+    result->success = success;
+    if (!success) {
+        result->error_message = "Command execution failed";
+    }
+    
+    // Send final feedback
+    feedback->current_phase = "completed";
+    feedback->current_tag_id = -1;
+    goal_handle->publish_feedback(feedback);
+    
+    if (success) {
+        goal_handle->succeed(result);
+        RCLCPP_INFO(get_logger(), "Goal succeeded");
+    } else {
+        goal_handle->abort(result);
+        RCLCPP_ERROR(get_logger(), "Goal aborted");
+    }
 }
 
 bool TagPicker::getStoredTagTransform(int tag_id, geometry_msgs::msg::TransformStamped& tag_transform)
@@ -147,8 +169,7 @@ bool TagPicker::collectDetectedTagsAndAcquireTransforms(double collection_time_s
             break;
         }
         
-        // Spin to process callbacks
-        rclcpp::spin_some(shared_from_this());
+        // Just sleep and let the main executor handle callbacks
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
     
@@ -229,6 +250,7 @@ bool TagPicker::moveToHome()
     }
     
     move_group_interface_->setNamedTarget("ready_to_see");
+    controlGripper(100);
     
     moveit::planning_interface::MoveGroupInterface::Plan home_plan;
     bool success = static_cast<bool>(move_group_interface_->plan(home_plan));
@@ -392,8 +414,8 @@ bool TagPicker::moveToReacquireTagPosition(const geometry_msgs::msg::TransformSt
 bool TagPicker::executeCartesianPath(const std::vector<geometry_msgs::msg::Pose>& waypoints, const std::string& description)
 {
     moveit_msgs::msg::RobotTrajectory trajectory;
-    double fraction = move_group_interface_->computeCartesianPath(waypoints, EEF_STEP, trajectory);
-    
+    double fraction = move_group_interface_->computeCartesianPath(waypoints, EEF_STEP, 0.05, trajectory);
+
     if (fraction > MIN_PATH_FRACTION) {
         RCLCPP_INFO(get_logger(), "%s (path fraction: %.2f)", description.c_str(), fraction);
         move_group_interface_->execute(trajectory);
@@ -542,6 +564,165 @@ bool TagPicker::executePlace(int target_tag_id)
     RCLCPP_INFO(get_logger(), "Place operation completed at tag ID: %d", target_tag_id);
     std::this_thread::sleep_for(std::chrono::milliseconds(OPERATION_DELAY_MS));
     
+    return true;
+}
+
+bool TagPicker::executePlace(const std::string& target_tf_name)
+{
+    RCLCPP_INFO(get_logger(), "Starting place operation at TF frame: %s", target_tf_name.c_str());
+    
+    // Get transform for the specified TF frame
+    geometry_msgs::msg::TransformStamped target_transform;
+    try {
+        target_transform = tf_buffer_->lookupTransform(
+            "base_link",  // target frame
+            target_tf_name,  // source frame  
+            tf2::TimePointZero,  // get latest available
+            std::chrono::seconds(1));
+        
+        RCLCPP_INFO(get_logger(), "Found TF frame: %s at position: x=%.3f, y=%.3f, z=%.3f", 
+                   target_tf_name.c_str(),
+                   target_transform.transform.translation.x,
+                   target_transform.transform.translation.y,
+                   target_transform.transform.translation.z);
+    }
+    catch (tf2::TransformException &ex) {
+        RCLCPP_ERROR(get_logger(), "Failed to find TF frame %s: %s", target_tf_name.c_str(), ex.what());
+        return false;
+    }
+
+    // Calculate placement pose using the TF transform
+    auto place_pose = calculateBaseAlignedPose(target_transform, PLACE_HEIGHT);
+    
+    // Move to placement position using Cartesian path
+    std::vector<geometry_msgs::msg::Pose> place_waypoints{place_pose};
+    if (!executeCartesianPath(place_waypoints, "moving to TF frame placement position")) {
+        return false;
+    }
+    
+    RCLCPP_INFO(get_logger(), "Reached TF frame placement position!");
+    std::this_thread::sleep_for(std::chrono::milliseconds(STABILIZE_DELAY_MS));
+    
+    // Open gripper to release object
+    controlGripper(100); // Open gripper fully
+    
+    RCLCPP_INFO(get_logger(), "Place operation completed at TF frame: %s", target_tf_name.c_str());
+    std::this_thread::sleep_for(std::chrono::milliseconds(OPERATION_DELAY_MS));
+    
+    return true;
+}
+
+bool TagPicker::handleHomeCommand(const std::shared_ptr<GoalHandlePickerAction> goal_handle)
+{
+    RCLCPP_INFO(get_logger(), "Executing HOME command");
+    
+    auto feedback = std::make_shared<PickerAction::Feedback>();
+    feedback->current_phase = "moving_to_home";
+    feedback->current_tag_id = -1;
+    goal_handle->publish_feedback(feedback);
+    
+    bool success = moveToHome();
+    
+    if (!success) {
+        RCLCPP_ERROR(get_logger(), "Failed to move to home position");
+    } else {
+        RCLCPP_INFO(get_logger(), "HOME command completed successfully");
+    }
+    
+    return success;
+}
+
+bool TagPicker::handleScanCommand(const std::shared_ptr<GoalHandlePickerAction> goal_handle)
+{
+    RCLCPP_INFO(get_logger(), "Executing SCAN command");
+    
+    auto feedback = std::make_shared<PickerAction::Feedback>();
+    feedback->current_phase = "searching";
+    feedback->current_tag_id = -1;
+    goal_handle->publish_feedback(feedback);
+    
+    bool success = collectDetectedTagsAndAcquireTransforms(1.0);
+    
+    if (!success) {
+        RCLCPP_ERROR(get_logger(), "SCAN command failed - no tags detected");
+    } else {
+        printDetectedTags();
+        RCLCPP_INFO(get_logger(), "SCAN command completed successfully");
+    }
+    
+    return success;
+}
+
+bool TagPicker::handlePickAndPlaceCommand(const std::shared_ptr<GoalHandlePickerAction> goal_handle)
+{
+    const auto goal = goal_handle->get_goal();
+    RCLCPP_INFO(get_logger(), "Executing PICK_AND_PLACE command: source_id=%d, target_id=%d, target_tf_name='%s'", 
+               goal->source_tag_id, goal->target_tag_id, goal->target_tf_name.c_str());
+    
+    auto feedback = std::make_shared<PickerAction::Feedback>();
+    
+    // Re-scan for tags before operation
+    feedback->current_phase = "searching";
+    feedback->current_tag_id = -1;
+    goal_handle->publish_feedback(feedback);
+    
+    if (!collectDetectedTagsAndAcquireTransforms(1.0)) {
+        RCLCPP_ERROR(get_logger(), "Failed to scan for tags before pick and place operation");
+        return false;
+    }
+    
+    // Execute pick operation
+    feedback->current_phase = "approaching_source";
+    feedback->current_tag_id = goal->source_tag_id;
+    goal_handle->publish_feedback(feedback);
+    
+    feedback->current_phase = "picking";
+    goal_handle->publish_feedback(feedback);
+    
+    if (!executePick(goal->source_tag_id)) {
+        RCLCPP_ERROR(get_logger(), "Pick operation failed for tag ID %d", goal->source_tag_id);
+        return false;
+    }
+    
+    // Execute place operation - check if using TF name or tag ID
+    feedback->current_phase = "moving_to_target";
+    if (!goal->target_tf_name.empty()) {
+        // Use TF frame name
+        feedback->current_tag_id = -1;  // No tag ID when using TF name
+        goal_handle->publish_feedback(feedback);
+        
+        feedback->current_phase = "placing";
+        goal_handle->publish_feedback(feedback);
+        
+        if (!executePlace(goal->target_tf_name)) {
+            RCLCPP_ERROR(get_logger(), "Place operation failed for TF frame %s", goal->target_tf_name.c_str());
+            return false;
+        }
+    } else {
+        // Use tag ID
+        feedback->current_tag_id = goal->target_tag_id;
+        goal_handle->publish_feedback(feedback);
+        
+        feedback->current_phase = "placing";
+        goal_handle->publish_feedback(feedback);
+        
+        if (!executePlace(goal->target_tag_id)) {
+            RCLCPP_ERROR(get_logger(), "Place operation failed for tag ID %d", goal->target_tag_id);
+            return false;
+        }
+    }
+    
+    // Return to home position
+    feedback->current_phase = "moving_to_home";
+    feedback->current_tag_id = -1;
+    goal_handle->publish_feedback(feedback);
+    
+    if (!moveToHome()) {
+        RCLCPP_WARN(get_logger(), "Failed to return to home position after pick and place");
+        return false;
+    }
+    
+    RCLCPP_INFO(get_logger(), "PICK_AND_PLACE command completed successfully");
     return true;
 }
 
