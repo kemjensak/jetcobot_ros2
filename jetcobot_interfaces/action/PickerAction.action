@@ -1,0 +1,12 @@
+# Goal - 클라이언트가 요청할 내용
+string command        # "PICK_AND_PLACE", "HOME", "SCAN"
+int32 source_tag_id   # Pick할 태그 ID
+int32 target_tag_id   # Place할 태그 ID (-1 if not applicable)
+---
+# Result - 최종 결과  
+bool success          # Whether the command was successful
+string error_message  # Error description if success is false
+---
+# Feedback - 실시간 진행상황
+string current_phase   # "searching", "approaching_source", "picking", "moving_to_target", "placing", "completed"
+int32 current_tag_id  # 현재 처리 중인 태그 ID
