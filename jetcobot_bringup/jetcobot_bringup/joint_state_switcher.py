@@ -64,7 +64,7 @@ class JointStateSwitcher(Node):
     
     def real_joint_states_callback(self, msg):
         """real_joint_states 토픽 콜백"""
-        self.get_logger().warn(f'Received real joint states at {msg.header.stamp.sec}.{msg.header.stamp.nanosec}')
+        # self.get_logger().warn(f'Received real joint states at {msg.header.stamp.sec}.{msg.header.stamp.nanosec}')
         self.latest_real_joint_states = msg
     
     def timer_callback(self):
