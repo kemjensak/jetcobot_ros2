@@ -2,6 +2,7 @@
 string command        # "PICK_AND_PLACE", "HOME", "SCAN"
 int32 source_tag_id   # Pick할 태그 ID
 int32 target_tag_id   # Place할 태그 ID (-1 if not applicable)
+string target_tf_name # TF frame name for target (alternative to target_tag_id)
 ---
 # Result - 최종 결과  
 bool success          # Whether the command was successful
