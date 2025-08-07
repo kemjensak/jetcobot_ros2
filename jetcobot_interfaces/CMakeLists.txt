@@ -12,11 +12,16 @@ find_package(geometry_msgs REQUIRED)
 find_package(action_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 
+
+
+
 # Generate interfaces
 rosidl_generate_interfaces(${PROJECT_NAME}
   "action/PickerAction.action"
+  "action/TaskAction.action"
   DEPENDENCIES std_msgs geometry_msgs action_msgs
 )
+
 
 # Export dependencies
 ament_export_dependencies(rosidl_default_runtime)

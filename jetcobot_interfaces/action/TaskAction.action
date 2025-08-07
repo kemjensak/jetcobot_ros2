@@ -1,0 +1,13 @@
+# Goal
+string task_type          # "LOAD", "UNLOAD", "IDLE"
+float64 x                 # 이동할 위치 (Boltbot pose)
+float64 y 
+float64 yaw
+---
+# Result
+bool success
+string message             # e.g., "Load complete", "No tags found", etc.
+---
+# Feedback
+string status              # "moving_to_start", "scanning", "executing_pick", "executing_place", "completed"
+int32 current_index        # 현재 처리 중인 pick/place index (예: 0, 1, 2...)
