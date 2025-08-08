@@ -26,6 +26,7 @@ arm_group_controller:
     allow_nonzero_velocity_at_trajectory_end: true
     interpolate_from_desired_state: true
     open_loop_control: true
+    allowed_start_tolerance: 0.1
 
 
 joint_state_broadcaster:

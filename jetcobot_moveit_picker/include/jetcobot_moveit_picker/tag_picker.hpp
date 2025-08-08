@@ -45,35 +45,65 @@ public:
     bool execute();
 
 private:
-    // Constants
-    static constexpr double APPROACH_HEIGHT = 0.05;  // 5cm above tag
-    static constexpr double CAM_HEIGHT = 0.08;       // 8cm above TCP
-    static constexpr double PICK_HEIGHT = -0.01;     // 1cm below tag surface
-    static constexpr double LIFT_HEIGHT = 0.07;      // 7cm lift
-    static constexpr double PLACE_HEIGHT = 0.025;    // 2.5cm above tag for placing
-    static constexpr double EEF_STEP = 0.005;        // End effector step size
-    static constexpr double MIN_PATH_FRACTION = 0.4; // Minimum path fraction for Cartesian planning
-    static constexpr int GRIPPER_CLOSE_DELAY_MS = 1500;
-    static constexpr int STABILIZE_DELAY_MS = 500;
-    static constexpr int OPERATION_DELAY_MS = 1500;
+    // ============================================================================
+    // CONSTANTS
+    // ============================================================================
+    struct MovementConstants {
+        static constexpr double APPROACH_HEIGHT = 0.07;    // 7cm above tag
+        static constexpr double CAM_HEIGHT = 0.09;         // 9cm above TCP
+        static constexpr double PICK_HEIGHT = -0.01;       // 1cm below tag surface
+        static constexpr double LIFT_HEIGHT = 0.04;        // 3cm lift
+        static constexpr double PLACE_HEIGHT = 0.025;      // 2.5cm above tag for placing
+        static constexpr double EEF_STEP = 0.001;          // End effector step size
+        static constexpr double MIN_PATH_FRACTION = 0.5;   // Minimum path fraction for Cartesian planning
+        
+        // Safety distances
+        static constexpr double MIN_DISTANCE_TO_BASE = 0.001;  // 1mm minimum distance to base for calculations
+    };
+    
+    struct TimingConstants {
+        static constexpr int GRIPPER_CLOSE_DELAY_MS = 1000;    // Delay for gripper closing
+        static constexpr int STABILIZE_DELAY_MS = 500;         // Stabilization delay
+        static constexpr int OPERATION_DELAY_MS = 2000;        // General operation delay
+        static constexpr double TAG_COLLECTION_TIME = 1.0;     // Tag detection collection time in seconds
+    };
+    
+    struct GripperPositions {
+        static constexpr int FULLY_OPEN = 100;        // Fully open position
+        static constexpr int PICKING_POSITION = 20;   // Position for picking objects
+        static constexpr int HOLDING_POSITION = 80;   // Position for holding/releasing objects
+        static constexpr int FULLY_CLOSED = 0;        // Fully closed position
+    };
+    
+    struct RotationAngles {
+        // X-axis rotation angles for multiple approach attempts (in degrees)
+        static constexpr int APPROACH_ANGLE_COUNT = 5;
+        static inline const std::vector<int> APPROACH_ANGLES = {0, -10, -20, -30, -40};
+    };
 
-    // Member variables
+    // ============================================================================
+    // MEMBER VARIABLES
+    // ============================================================================
+    
+    // Core MoveIt and ROS interfaces
     std::shared_ptr<moveit::planning_interface::MoveGroupInterface> move_group_interface_;
     std::unique_ptr<tf2_ros::Buffer> tf_buffer_;
     std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
+    
+    // Publishers and subscribers
     rclcpp::Publisher<std_msgs::msg::Int32>::SharedPtr gripper_pub_;
     rclcpp::Subscription<apriltag_msgs::msg::AprilTagDetectionArray>::SharedPtr detection_sub_;
     rclcpp_action::Server<PickerAction>::SharedPtr action_server_;
     
-    // Storage for tag transforms
+    // Data storage
     std::map<int, geometry_msgs::msg::TransformStamped> stored_tag_transforms_;
-    
-    // Detection-related storage
     std::set<int> detected_tag_ids_;
     std::chrono::steady_clock::time_point detection_start_time_;
     bool is_collecting_detections_;
 
-    // Callback functions
+    // ============================================================================
+    // ACTION SERVER CALLBACKS
+    // ============================================================================
     /**
      * @brief Goal callback for action server
      */
@@ -123,10 +153,18 @@ private:
      * @brief Get set of detected tag IDs
      * @return Set of detected tag IDs
      */
+    // ============================================================================
+    // TAG DETECTION AND MANAGEMENT
+    // ============================================================================
+    
+    /**
+     * @brief Get detected tag IDs
+     * @return Set of detected tag IDs
+     */
     std::set<int> getDetectedTagIds() const;
 
     /**
-     * @brief Print all detected tags to console
+     * @brief Print detected tags to console
      */
     void printDetectedTags() const;
 
@@ -137,12 +175,16 @@ private:
      */
     bool updateStoredTagIfVisible(int tag_id);
 
-    // Movement functions
+    // ============================================================================
+    // ROBOT MOVEMENT FUNCTIONS
+    // ============================================================================
+    
     /**
-     * @brief Move robot to home position
+     * @brief Move robot to specified configuration
+     * @param config_name Name of the configuration
      * @return true if successful, false otherwise
      */
-    bool moveToHome();
+    bool moveToConfiguration(const std::string& config_name);
 
     /**
      * @brief Move to position to reacquire tag
@@ -160,20 +202,74 @@ private:
      */
     bool executeCartesianPath(const std::vector<geometry_msgs::msg::Pose>& waypoints, const std::string& description);
 
-    // Utility functions
+    // ============================================================================
+    // POSE CALCULATION UTILITIES
+    // ============================================================================
+    
     /**
-     * @brief Calculate base-aligned pose for tag interaction
+     * @brief Calculate single base-aligned pose for tag interaction
      * @param tag_transform Tag transform
      * @param z_offset Height offset from tag
-     * @return Calculated pose
+     * @return Calculated pose aligned with robot base direction
      */
     geometry_msgs::msg::Pose calculateBaseAlignedPose(const geometry_msgs::msg::TransformStamped& tag_transform, double z_offset);
 
     /**
-     * @brief Control gripper position
-     * @param close_value Gripper value (0=close, 100=open)
+     * @brief Calculate multiple base-aligned poses with X-axis rotations
+     * @param tag_transform Tag transform
+     * @param z_offset Height offset from tag
+     * @return Vector of calculated poses with different X-axis rotations (0°, -10°, -20°, -30°, -40°)
+     */
+    std::vector<geometry_msgs::msg::Pose> calculateBaseAlignedPoses(const geometry_msgs::msg::TransformStamped& tag_transform, double z_offset);
+    
+    // ============================================================================
+    // COMMON MOVEMENT PATTERNS
+    // ============================================================================
+    
+    /**
+     * @brief Execute stabilized movement with timing delay
+     * @param waypoints Poses to execute
+     * @param description Movement description for logging
+     * @return true if successful, false otherwise
+     */
+    bool executeStabilizedMovement(const std::vector<geometry_msgs::msg::Pose>& waypoints, const std::string& description);
+    
+    /**
+     * @brief Execute lift movement from current position
+     * @param lift_height Height to lift in meters
+     * @return true if successful, false otherwise
+     */
+    bool executeLiftMovement(double lift_height);
+
+    // ============================================================================
+    // HARDWARE CONTROL
+    // ============================================================================
+    
+    /**
+     * @brief Control gripper position with predefined positions
+     * @param close_value Gripper value (use GripperPositions constants)
      */
     void controlGripper(int close_value);
+    
+    /**
+     * @brief Open gripper to holding position (for object release)
+     */
+    void openGripperToHoldingPosition() { controlGripper(GripperPositions::HOLDING_POSITION); }
+    
+    /**
+     * @brief Close gripper to picking position (for object grasping)
+     */
+    void closeGripperToPicking() { controlGripper(GripperPositions::PICKING_POSITION); }
+    
+    /**
+     * @brief Fully open gripper
+     */
+    void openGripperFully() { controlGripper(GripperPositions::FULLY_OPEN); }
+    
+    /**
+     * @brief Fully close gripper
+     */
+    void closeGripperFully() { controlGripper(GripperPositions::FULLY_CLOSED); }
 
     /**
      * @brief Find specific AprilTag by ID
@@ -183,7 +279,10 @@ private:
      */
     bool findSpecificAprilTag(int tag_id, geometry_msgs::msg::TransformStamped& tag_transform);
 
-    // Main operation functions
+    // ============================================================================
+    // MAIN PICK AND PLACE OPERATIONS
+    // ============================================================================
+    
     /**
      * @brief Execute pick operation for specified tag
      * @param tag_id Tag ID to pick from
@@ -194,30 +293,50 @@ private:
     /**
      * @brief Execute place operation at specified tag location
      * @param target_tag_id Tag ID to place at
+     * @param source_tag_id Source tag ID being placed (for pose update)
      * @return true if successful, false otherwise
      */
-    bool executePlace(int target_tag_id);
+    bool executePlace(int target_tag_id, int source_tag_id);
 
     /**
      * @brief Execute place operation at specified TF frame location
      * @param target_tf_name TF frame name to place at
+     * @param source_tag_id ID of the tag being placed (for pose updating)
      * @return true if successful, false otherwise
      */
-    bool executePlace(const std::string& target_tf_name);
+    bool executePlace(const std::string& target_tf_name, int source_tag_id);
 
-    // Command handling functions
+    // ============================================================================
+    // COMMAND HANDLERS
+    // ============================================================================
+    
     /**
-     * @brief Handle HOME command
+     * @brief Handle HOME command - move robot to ready position
      */
     bool handleHomeCommand(const std::shared_ptr<GoalHandlePickerAction> goal_handle);
 
     /**
-     * @brief Handle SCAN command
+     * @brief Handle SCAN command - scan for tags from current position
      */
     bool handleScanCommand(const std::shared_ptr<GoalHandlePickerAction> goal_handle);
 
     /**
-     * @brief Handle PICK_AND_PLACE command
+     * @brief Handle SCAN_FRONT command - move to front scan position and scan
+     */
+    bool handleScanFrontCommand(const std::shared_ptr<GoalHandlePickerAction> goal_handle);
+
+    /**
+     * @brief Handle SCAN_LEFT command - move to left scan position and scan
+     */
+    bool handleScanLeftCommand(const std::shared_ptr<GoalHandlePickerAction> goal_handle);
+
+    /**
+     * @brief Handle SCAN_RIGHT command - move to right scan position and scan
+     */
+    bool handleScanRightCommand(const std::shared_ptr<GoalHandlePickerAction> goal_handle);
+
+    /**
+     * @brief Handle PICK_AND_PLACE command - execute complete pick and place operation
      * @param goal_handle Action goal handle
      */
     bool handlePickAndPlaceCommand(const std::shared_ptr<GoalHandlePickerAction> goal_handle);
