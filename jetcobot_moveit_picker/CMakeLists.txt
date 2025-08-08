@@ -87,6 +87,7 @@ install(
 
 install(PROGRAMS
   scripts/task_status.py
+  scripts/picker_gui.py
   DESTINATION lib/${PROJECT_NAME}
 )
 
