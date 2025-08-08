@@ -39,6 +39,30 @@
         <joint name="5_Joint" value="0"/>
         <joint name="6_Joint" value="-0.7854"/>
     </group_state>
+     <group_state name="scan_front" group="arm_group">
+        <joint name="1_Joint" value="0"/>
+        <joint name="2_Joint" value="0.5236"/>
+        <joint name="3_Joint" value="-0.349066"/>
+        <joint name="4_Joint" value="-1.39626"/>
+        <joint name="5_Joint" value="0"/>
+        <joint name="6_Joint" value="-0.7854"/>
+    </group_state>
+     <group_state name="scan_left" group="arm_group">
+        <joint name="1_Joint" value="1.5708"/>
+        <joint name="2_Joint" value="0.5236"/>
+        <joint name="3_Joint" value="-0.349066"/>
+        <joint name="4_Joint" value="-1.39626"/>
+        <joint name="5_Joint" value="0"/>
+        <joint name="6_Joint" value="-0.7854"/>
+    </group_state>
+     <group_state name="scan_right" group="arm_group">
+        <joint name="1_Joint" value="-1.5708"/>
+        <joint name="2_Joint" value="0.5236"/>
+        <joint name="3_Joint" value="-0.349066"/>
+        <joint name="4_Joint" value="-1.39626"/>
+        <joint name="5_Joint" value="0"/>
+        <joint name="6_Joint" value="-0.7854"/>
+    </group_state>
     <!--END EFFECTOR: Purpose: Represent information about an end effector.-->
     <end_effector name="gripper" parent_link="6_Link" group="gripper_group"/>
     <!--VIRTUAL JOINT: Purpose: this element defines a virtual joint between a robot link and an external frame of reference (considered fixed with respect to the robot)-->
