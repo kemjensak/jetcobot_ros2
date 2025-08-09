@@ -30,13 +30,17 @@ bool TagPicker::execute()
 {
     // Initialize MoveGroupInterface after the object is fully constructed
     move_group_interface_ = std::make_shared<moveit::planning_interface::MoveGroupInterface>(shared_from_this(), "arm_group");
-    move_group_interface_->setMaxAccelerationScalingFactor(0.9);
-    move_group_interface_->setMaxVelocityScalingFactor(1.0);
-    move_group_interface_->setPlanningTime(10.0);  // Set planning time to 15 seconds
-    move_group_interface_->setNumPlanningAttempts(200);
+    move_group_interface_->setMaxAccelerationScalingFactor(0.6);
+    move_group_interface_->setMaxVelocityScalingFactor(0.9);
+    move_group_interface_->setPlanningTime(15.0);  // Set planning time to 15 seconds
+    move_group_interface_->setNumPlanningAttempts(100);
     
-    openGripperToHoldingPosition();
-    // controlGripper(100);  // Open gripper fully to start fresh
+    // Move to home position first
+    if (!moveToHome()) {
+        RCLCPP_WARN(get_logger(), "Failed to move to home position, continuing anyway...");
+    }
+
+    controlGripper(100);  // Open gripper fully to start fresh
 
     RCLCPP_INFO(get_logger(), "TagPicker ready to receive action commands!");
     
@@ -87,15 +91,6 @@ void TagPicker::execute_goal(const std::shared_ptr<GoalHandlePickerAction> goal_
     }
     else if (goal->command == "SCAN") {
         success = handleScanCommand(goal_handle);
-    }
-    else if (goal->command == "SCAN_FRONT") {
-        success = handleScanFrontCommand(goal_handle);
-    }
-    else if (goal->command == "SCAN_LEFT") {
-        success = handleScanLeftCommand(goal_handle);
-    }
-    else if (goal->command == "SCAN_RIGHT") {
-        success = handleScanRightCommand(goal_handle);
     }
     else if (goal->command == "PICK_AND_PLACE") {
         success = handlePickAndPlaceCommand(goal_handle);
@@ -160,7 +155,7 @@ bool TagPicker::collectDetectedTagsAndAcquireTransforms(double collection_time_s
     
     // Clear previous detections and start collection
     detected_tag_ids_.clear();
-    // stored_tag_transforms_.clear();
+    stored_tag_transforms_.clear();
     is_collecting_detections_ = true;
     detection_start_time_ = std::chrono::steady_clock::now();
     
@@ -243,9 +238,9 @@ void TagPicker::printDetectedTags() const
     }
 }
 
-bool TagPicker::moveToConfiguration(const std::string& config_name)
+bool TagPicker::moveToHome()
 {
-    RCLCPP_INFO(get_logger(), "Moving to configuration: %s", config_name.c_str());
+    RCLCPP_INFO(get_logger(), "Moving to home position...");
     
     // Get available named targets for debugging
     std::vector<std::string> named_targets = move_group_interface_->getNamedTargets();
@@ -254,19 +249,21 @@ bool TagPicker::moveToConfiguration(const std::string& config_name)
         RCLCPP_INFO(get_logger(), "  - %s", target.c_str());
     }
     
-    move_group_interface_->setNamedTarget(config_name);
-    moveit::planning_interface::MoveGroupInterface::Plan config_plan;
-    bool success = static_cast<bool>(move_group_interface_->plan(config_plan));
+    move_group_interface_->setNamedTarget("ready_to_see");
+    controlGripper(100);
+    
+    moveit::planning_interface::MoveGroupInterface::Plan home_plan;
+    bool success = static_cast<bool>(move_group_interface_->plan(home_plan));
     
     if (success) {
-        RCLCPP_INFO(get_logger(), "Configuration plan found! Executing...");
-        move_group_interface_->execute(config_plan);
-        RCLCPP_INFO(get_logger(), "Successfully moved to configuration: %s", config_name.c_str());
-        std::this_thread::sleep_for(std::chrono::milliseconds(TimingConstants::OPERATION_DELAY_MS));
+        RCLCPP_INFO(get_logger(), "Home plan found! Executing...");
+        move_group_interface_->execute(home_plan);
+        RCLCPP_INFO(get_logger(), "Successfully moved to home position!");
+        std::this_thread::sleep_for(std::chrono::milliseconds(OPERATION_DELAY_MS));
         return true;
     }
     
-    RCLCPP_ERROR(get_logger(), "Failed to plan move to configuration: %s", config_name.c_str());
+    RCLCPP_ERROR(get_logger(), "Failed to plan move to home position!");
     return false;
 }
 
@@ -291,16 +288,9 @@ geometry_msgs::msg::Pose TagPicker::calculateBaseAlignedPose(const geometry_msgs
     double tag_x = tag_transform.transform.translation.x;
     double tag_y = tag_transform.transform.translation.y;
     
-    // Direction toward base (normalized) - with safety check for division by zero
+    // Direction toward base (normalized)
     double distance_to_base = sqrt(tag_x * tag_x + tag_y * tag_y);
-    tf2::Vector3 base_direction;
-    
-    if (distance_to_base < MovementConstants::MIN_DISTANCE_TO_BASE) {  // Very close to base
-        RCLCPP_WARN(get_logger(), "TF frame very close to robot base (distance: %.6f), using default Y-axis alignment", distance_to_base);
-        base_direction = tf2::Vector3(0, 1, 0);  // Default to Y-axis direction
-    } else {
-        base_direction = tf2::Vector3(-tag_x / distance_to_base, -tag_y / distance_to_base, 0);
-    }
+    tf2::Vector3 base_direction(-tag_x / distance_to_base, -tag_y / distance_to_base, 0);
     
     // Get tag's 4 principal axes (+X, -X, +Y, -Y)
     tf2::Vector3 tag_axes[4];
@@ -360,56 +350,6 @@ geometry_msgs::msg::Pose TagPicker::calculateBaseAlignedPose(const geometry_msgs
     return pose;
 }
 
-std::vector<geometry_msgs::msg::Pose> TagPicker::calculateBaseAlignedPoses(const geometry_msgs::msg::TransformStamped& tag_transform, double z_offset)
-{
-    std::vector<geometry_msgs::msg::Pose> poses;
-    
-    // First, get the base aligned pose
-    geometry_msgs::msg::Pose base_pose = calculateBaseAlignedPose(tag_transform, z_offset);
-    
-    // Convert base orientation to quaternion
-    tf2::Quaternion base_quat(
-        base_pose.orientation.x,
-        base_pose.orientation.y,
-        base_pose.orientation.z,
-        base_pose.orientation.w
-    );
-
-    // Generate poses with X-axis rotations using predefined angles
-    const auto& angles = RotationAngles::APPROACH_ANGLES;
-    
-    for (int angle_deg : angles) {
-        geometry_msgs::msg::Pose pose;
-        
-        // Same position for all poses
-        pose.position = base_pose.position;
-        
-        // Create X-axis rotation quaternion
-        double angle_rad = angle_deg * M_PI / 180.0;
-        tf2::Quaternion x_rotation;
-        x_rotation.setRPY(angle_rad, 0, 0);  // Roll around X-axis
-        
-        // Apply X-axis rotation to the base orientation
-        tf2::Quaternion rotated_quat = base_quat * x_rotation;
-        rotated_quat.normalize();
-        
-        // Set the rotated orientation
-        pose.orientation.x = rotated_quat.x();
-        pose.orientation.y = rotated_quat.y();
-        pose.orientation.z = rotated_quat.z();
-        pose.orientation.w = rotated_quat.w();
-        
-        poses.push_back(pose);
-        
-        RCLCPP_DEBUG(get_logger(), "Generated pose for X-axis rotation %d°: position(%.3f, %.3f, %.3f)", 
-                    angle_deg, pose.position.x, pose.position.y, pose.position.z);
-    }
-    
-    RCLCPP_INFO(get_logger(), "Generated %zu poses with X-axis rotations: 0°, -15°, -30°, -45°", poses.size());
-    
-    return poses;
-}
-
 bool TagPicker::updateStoredTagIfVisible(int tag_id)
 {
     RCLCPP_INFO(get_logger(), "Checking if tag ID %d is visible for pose update...", tag_id);
@@ -442,13 +382,12 @@ bool TagPicker::updateStoredTagIfVisible(int tag_id)
 bool TagPicker::moveToReacquireTagPosition(const geometry_msgs::msg::TransformStamped& tag_transform, int tag_id)
 {
     // Use look-at pose for approach position to orient TCP toward tag center
-    auto tag_pose = calculateBaseAlignedPose(tag_transform, MovementConstants::CAM_HEIGHT + MovementConstants::APPROACH_HEIGHT);
+    auto tag_pose = calculateBaseAlignedPose(tag_transform, CAM_HEIGHT + APPROACH_HEIGHT);
 
     RCLCPP_INFO(get_logger(), "Moving to tag position (%.1fcm above) with look-at orientation: x=%.3f, y=%.3f, z=%.3f",
-               MovementConstants::CAM_HEIGHT * 100, tag_pose.position.x,
+               CAM_HEIGHT * 100, tag_pose.position.x,
                tag_pose.position.y, tag_pose.position.z);
-               
-    move_group_interface_->clearPoseTargets();
+
     move_group_interface_->setPoseTarget(tag_pose, "jetcocam");
 
     // Plan and execute approach motion
@@ -459,7 +398,7 @@ bool TagPicker::moveToReacquireTagPosition(const geometry_msgs::msg::TransformSt
         RCLCPP_INFO(get_logger(), "Approach plan found! Executing...");
         move_group_interface_->execute(approach_plan);
         RCLCPP_INFO(get_logger(), "Approach motion completed!");
-        std::this_thread::sleep_for(std::chrono::milliseconds(TimingConstants::OPERATION_DELAY_MS));
+        std::this_thread::sleep_for(std::chrono::milliseconds(OPERATION_DELAY_MS));
         
         // Try to update the stored tag pose if the tag is visible from the new position
         if (tag_id >= 0) {
@@ -475,9 +414,9 @@ bool TagPicker::moveToReacquireTagPosition(const geometry_msgs::msg::TransformSt
 bool TagPicker::executeCartesianPath(const std::vector<geometry_msgs::msg::Pose>& waypoints, const std::string& description)
 {
     moveit_msgs::msg::RobotTrajectory trajectory;
-    double fraction = move_group_interface_->computeCartesianPath(waypoints, MovementConstants::EEF_STEP, trajectory);
+    double fraction = move_group_interface_->computeCartesianPath(waypoints, EEF_STEP, 0.05, trajectory);
 
-    if (fraction > MovementConstants::MIN_PATH_FRACTION) {
+    if (fraction > MIN_PATH_FRACTION) {
         RCLCPP_INFO(get_logger(), "%s (path fraction: %.2f)", description.c_str(), fraction);
         move_group_interface_->execute(trajectory);
         return true;
@@ -487,41 +426,21 @@ bool TagPicker::executeCartesianPath(const std::vector<geometry_msgs::msg::Pose>
     }
 }
 
-bool TagPicker::executeStabilizedMovement(const std::vector<geometry_msgs::msg::Pose>& waypoints, const std::string& description)
-{
-    if (!executeCartesianPath(waypoints, description)) {
-        return false;
-    }
-    
-    RCLCPP_INFO(get_logger(), "Movement completed: %s", description.c_str());
-    std::this_thread::sleep_for(std::chrono::milliseconds(TimingConstants::STABILIZE_DELAY_MS));
-    return true;
-}
-
-bool TagPicker::executeLiftMovement(double lift_height)
-{
-    geometry_msgs::msg::Pose current_pose = move_group_interface_->getCurrentPose("TCP").pose;
-    current_pose.position.z += lift_height;
-    
-    std::vector<geometry_msgs::msg::Pose> lift_waypoints{current_pose};
-    return executeStabilizedMovement(lift_waypoints, "lifting movement");
-}
-
 void TagPicker::controlGripper(int close_value)
 {
     auto gripper_msg = std_msgs::msg::Int32();
     gripper_msg.data = close_value;
     gripper_pub_->publish(gripper_msg);
     
-    if (close_value == GripperPositions::FULLY_OPEN) {
+    if (close_value == 100) {
         RCLCPP_INFO(get_logger(), "Opening gripper fully...");
-        std::this_thread::sleep_for(std::chrono::milliseconds(TimingConstants::OPERATION_DELAY_MS));
-    } else if (close_value == GripperPositions::FULLY_CLOSED) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(OPERATION_DELAY_MS));
+    } else if (close_value == 0) {
         RCLCPP_INFO(get_logger(), "Closing gripper fully...");
-        std::this_thread::sleep_for(std::chrono::milliseconds(TimingConstants::GRIPPER_CLOSE_DELAY_MS));
+        std::this_thread::sleep_for(std::chrono::milliseconds(GRIPPER_CLOSE_DELAY_MS));
     } else {
         RCLCPP_INFO(get_logger(), "Setting gripper position to %d", close_value);
-        std::this_thread::sleep_for(std::chrono::milliseconds(TimingConstants::OPERATION_DELAY_MS));
+        std::this_thread::sleep_for(std::chrono::milliseconds(OPERATION_DELAY_MS));
     }
 }
 
@@ -572,60 +491,42 @@ bool TagPicker::executePick(int tag_id)
         tag_transform = updated_tag_transform;
         RCLCPP_INFO(get_logger(), "Using updated tag transform for final approach");
     }
-
-     // Get current EEF orientation
-    geometry_msgs::msg::Pose current_ee_pose = move_group_interface_->getCurrentPose("TCP").pose;
-    auto current_ee_orientation = current_ee_pose.orientation;
     
-    // Calculate multiple final target poses with different X-axis rotations
-    auto final_target_poses = calculateBaseAlignedPoses(tag_transform, MovementConstants::PICK_HEIGHT);
+    // Calculate final target pose using (potentially updated) stored transform
+    auto final_target_pose = calculateBaseAlignedPose(tag_transform, PICK_HEIGHT);
     
-    // Try each pose for final approach until one succeeds
-    bool final_approach_success = false;
-    geometry_msgs::msg::Pose successful_pose;
-    const auto& angles = RotationAngles::APPROACH_ANGLES;
-    
-    for (size_t i = 0; i < final_target_poses.size(); ++i) {
-        RCLCPP_INFO(get_logger(), "Attempting final approach %zu/%zu (X-rotation: %d°)", 
-                   i + 1, final_target_poses.size(), angles[i]);
-        final_target_poses[i].orientation = current_ee_orientation;  // Maintain current EEF orientation
-        // Move to final position using Cartesian path
-        std::vector<geometry_msgs::msg::Pose> approach_waypoints{final_target_poses[i]};
-        if (executeCartesianPath(approach_waypoints, "final approach to tag")) {
-            final_approach_success = true;
-            successful_pose = final_target_poses[i];  // Store the successful pose
-            RCLCPP_INFO(get_logger(), "Final approach successful with %d° X-rotation!", angles[i]);
-            break;
-        } else {
-            RCLCPP_WARN(get_logger(), "Final approach failed with %d° X-rotation, trying next angle...", angles[i]);
-        }
-    }
-    
-    if (!final_approach_success) {
-        RCLCPP_ERROR(get_logger(), "All final approach attempts failed!");
+    // Move to final position using Cartesian path
+    std::vector<geometry_msgs::msg::Pose> approach_waypoints{final_target_pose};
+    if (!executeCartesianPath(approach_waypoints, "final approach to tag")) {
         return false;
     }
     
     RCLCPP_INFO(get_logger(), "Final aligned motion completed!");
-    std::this_thread::sleep_for(std::chrono::milliseconds(TimingConstants::STABILIZE_DELAY_MS));
+    std::this_thread::sleep_for(std::chrono::milliseconds(STABILIZE_DELAY_MS));
     
     // Close gripper
-    closeGripperToPicking();
+    controlGripper(0); // Close gripper fully
 
-    // Lift object - use the successful pose for lifting
-    if (!executeLiftMovement(MovementConstants::LIFT_HEIGHT)) {
+    // PublishBoxCollisionObject();
+
+    // Lift object
+    auto lift_pose = final_target_pose;
+    lift_pose.position.z += LIFT_HEIGHT;
+    
+    std::vector<geometry_msgs::msg::Pose> lift_waypoints{lift_pose};
+    if (!executeCartesianPath(lift_waypoints, "lifting object")) {
         return false;
     }
     
     RCLCPP_INFO(get_logger(), "Pick operation completed for tag ID: %d", tag_id);
-    std::this_thread::sleep_for(std::chrono::milliseconds(TimingConstants::OPERATION_DELAY_MS));
+    std::this_thread::sleep_for(std::chrono::milliseconds(OPERATION_DELAY_MS));
     
     return true;
 }
 
-bool TagPicker::executePlace(int target_tag_id, int source_tag_id)
+bool TagPicker::executePlace(int target_tag_id)
 {
-    RCLCPP_INFO(get_logger(), "Starting place operation: placing source tag %d at target tag %d position", source_tag_id, target_tag_id);
+    RCLCPP_INFO(get_logger(), "Starting place operation at tag ID: %d", target_tag_id);
     
     // Get the stored target tag transform
     geometry_msgs::msg::TransformStamped target_tag_transform;
@@ -647,41 +548,30 @@ bool TagPicker::executePlace(int target_tag_id, int source_tag_id)
         RCLCPP_INFO(get_logger(), "Using updated target tag transform for placement");
     }
     
-    // Get current EEF orientation
-    geometry_msgs::msg::Pose current_ee_pose = move_group_interface_->getCurrentPose("TCP").pose;
-    auto current_ee_orientation = current_ee_pose.orientation;
-
     // Calculate placement pose using (potentially updated) stored transform
-    auto place_pose = calculateBaseAlignedPose(target_tag_transform, MovementConstants::PLACE_HEIGHT);
-    place_pose.orientation = current_ee_orientation;  // Maintain current EEF orientation
+    auto place_pose = calculateBaseAlignedPose(target_tag_transform, PLACE_HEIGHT);
     
     // Move down to placement position
     std::vector<geometry_msgs::msg::Pose> place_waypoints{place_pose};
-    if (!executeStabilizedMovement(place_waypoints, "moving to placement position")) {
+    if (!executeCartesianPath(place_waypoints, "moving to placement position")) {
         return false;
     }
+    
+    RCLCPP_INFO(get_logger(), "Reached placement position!");
+    std::this_thread::sleep_for(std::chrono::milliseconds(STABILIZE_DELAY_MS));
     
     // Open gripper to release object
-    openGripperToHoldingPosition();
-
-    // Move up to lift position
-    if (!executeLiftMovement(MovementConstants::APPROACH_HEIGHT)) {
-        return false;
-    }
+    controlGripper(100); // Open gripper fully
     
-    // Update stored tag pose after successful placement
-    RCLCPP_INFO(get_logger(), "Updating stored pose for placed source tag ID %d (now at target position)...", source_tag_id);
-    updateStoredTagIfVisible(source_tag_id);
-    
-    RCLCPP_INFO(get_logger(), "Place operation completed: source tag %d placed at target tag %d position", source_tag_id, target_tag_id);
-    std::this_thread::sleep_for(std::chrono::milliseconds(TimingConstants::OPERATION_DELAY_MS));
+    RCLCPP_INFO(get_logger(), "Place operation completed at tag ID: %d", target_tag_id);
+    std::this_thread::sleep_for(std::chrono::milliseconds(OPERATION_DELAY_MS));
     
     return true;
 }
 
-bool TagPicker::executePlace(const std::string& target_tf_name, int source_tag_id)
+bool TagPicker::executePlace(const std::string& target_tf_name)
 {
-    RCLCPP_INFO(get_logger(), "Starting place operation: placing source tag %d at TF frame: %s", source_tag_id, target_tf_name.c_str());
+    RCLCPP_INFO(get_logger(), "Starting place operation at TF frame: %s", target_tf_name.c_str());
     
     // Get transform for the specified TF frame
     geometry_msgs::msg::TransformStamped target_transform;
@@ -703,56 +593,23 @@ bool TagPicker::executePlace(const std::string& target_tf_name, int source_tag_i
         return false;
     }
 
-    // First, move to approach position (APPROACH_HEIGHT above the target frame)
-    auto approach_pose = calculateBaseAlignedPose(target_transform, MovementConstants::APPROACH_HEIGHT);
-
-    RCLCPP_INFO(get_logger(), "Moving to approach position (%.1fcm above) for TF frame: x=%.3f, y=%.3f, z=%.3f",
-               MovementConstants::APPROACH_HEIGHT * 100, approach_pose.position.x,
-               approach_pose.position.y, approach_pose.position.z);
-
-    move_group_interface_->clearPoseTargets();
-    move_group_interface_->setPoseTarget(approach_pose, "TCP");
-
-    // Plan and execute approach motion
-    moveit::planning_interface::MoveGroupInterface::Plan approach_plan;
-    bool approach_success = static_cast<bool>(move_group_interface_->plan(approach_plan));
-    
-    if (!approach_success) {
-        RCLCPP_ERROR(get_logger(), "Failed to plan move to approach position for TF frame");
-        return false;
-    }
-    
-    RCLCPP_INFO(get_logger(), "Approach plan found! Executing...");
-    move_group_interface_->execute(approach_plan);
-    RCLCPP_INFO(get_logger(), "Successfully moved to approach position!");
-    std::this_thread::sleep_for(std::chrono::milliseconds(TimingConstants::OPERATION_DELAY_MS));
-
-    // Then, move down to final placement position using Cartesian path
-    auto place_pose = calculateBaseAlignedPose(target_transform, MovementConstants::PLACE_HEIGHT);
-    
-    RCLCPP_INFO(get_logger(), "Moving to final placement position using Cartesian path: x=%.3f, y=%.3f, z=%.3f",
-               place_pose.position.x, place_pose.position.y, place_pose.position.z);
+    // Calculate placement pose using the TF transform
+    auto place_pose = calculateBaseAlignedPose(target_transform, PLACE_HEIGHT);
     
     // Move to placement position using Cartesian path
     std::vector<geometry_msgs::msg::Pose> place_waypoints{place_pose};
-    if (!executeStabilizedMovement(place_waypoints, "moving to TF frame placement position")) {
+    if (!executeCartesianPath(place_waypoints, "moving to TF frame placement position")) {
         return false;
     }
+    
+    RCLCPP_INFO(get_logger(), "Reached TF frame placement position!");
+    std::this_thread::sleep_for(std::chrono::milliseconds(STABILIZE_DELAY_MS));
     
     // Open gripper to release object
-    openGripperToHoldingPosition();
+    controlGripper(100); // Open gripper fully
     
-    // Move up to lift position after placing
-    if (!executeLiftMovement(MovementConstants::APPROACH_HEIGHT)) {
-        return false;
-    }
-
-    // Update stored tag pose after successful placement
-    RCLCPP_INFO(get_logger(), "Updating stored pose for placed source tag ID %d (now at TF frame position)...", source_tag_id);
-    updateStoredTagIfVisible(source_tag_id);
-
-    RCLCPP_INFO(get_logger(), "Place operation completed: source tag %d placed at TF frame: %s", source_tag_id, target_tf_name.c_str());
-    std::this_thread::sleep_for(std::chrono::milliseconds(TimingConstants::OPERATION_DELAY_MS));
+    RCLCPP_INFO(get_logger(), "Place operation completed at TF frame: %s", target_tf_name.c_str());
+    std::this_thread::sleep_for(std::chrono::milliseconds(OPERATION_DELAY_MS));
     
     return true;
 }
@@ -766,7 +623,7 @@ bool TagPicker::handleHomeCommand(const std::shared_ptr<GoalHandlePickerAction> 
     feedback->current_tag_id = -1;
     goal_handle->publish_feedback(feedback);
     
-    bool success = moveToConfiguration("ready_to_see");
+    bool success = moveToHome();
     
     if (!success) {
         RCLCPP_ERROR(get_logger(), "Failed to move to home position");
@@ -786,103 +643,13 @@ bool TagPicker::handleScanCommand(const std::shared_ptr<GoalHandlePickerAction> 
     feedback->current_tag_id = -1;
     goal_handle->publish_feedback(feedback);
     
-    bool success = collectDetectedTagsAndAcquireTransforms(TimingConstants::TAG_COLLECTION_TIME);
+    bool success = collectDetectedTagsAndAcquireTransforms(1.0);
     
     if (!success) {
         RCLCPP_ERROR(get_logger(), "SCAN command failed - no tags detected");
     } else {
         printDetectedTags();
         RCLCPP_INFO(get_logger(), "SCAN command completed successfully");
-    }
-    
-    return success;
-}
-
-bool TagPicker::handleScanFrontCommand(const std::shared_ptr<GoalHandlePickerAction> goal_handle)
-{
-    RCLCPP_INFO(get_logger(), "Executing SCAN_FRONT command");
-    
-    auto feedback = std::make_shared<PickerAction::Feedback>();
-    feedback->current_phase = "moving_to_scan_position";
-    feedback->current_tag_id = -1;
-    goal_handle->publish_feedback(feedback);
-    
-    // Move to scan_front configuration
-    if (!moveToConfiguration("scan_front")) {
-        RCLCPP_ERROR(get_logger(), "Failed to move to scan_front configuration");
-        return false;
-    }
-    
-    feedback->current_phase = "searching";
-    goal_handle->publish_feedback(feedback);
-    
-    bool success = collectDetectedTagsAndAcquireTransforms(TimingConstants::TAG_COLLECTION_TIME);
-    
-    if (!success) {
-        RCLCPP_ERROR(get_logger(), "SCAN_FRONT command failed - no tags detected");
-    } else {
-        printDetectedTags();
-        RCLCPP_INFO(get_logger(), "SCAN_FRONT command completed successfully");
-    }
-    
-    return success;
-}
-
-bool TagPicker::handleScanLeftCommand(const std::shared_ptr<GoalHandlePickerAction> goal_handle)
-{
-    RCLCPP_INFO(get_logger(), "Executing SCAN_LEFT command");
-    
-    auto feedback = std::make_shared<PickerAction::Feedback>();
-    feedback->current_phase = "moving_to_scan_position";
-    feedback->current_tag_id = -1;
-    goal_handle->publish_feedback(feedback);
-    
-    // Move to scan_left configuration
-    if (!moveToConfiguration("scan_left")) {
-        RCLCPP_ERROR(get_logger(), "Failed to move to scan_left configuration");
-        return false;
-    }
-    
-    feedback->current_phase = "searching";
-    goal_handle->publish_feedback(feedback);
-    
-    bool success = collectDetectedTagsAndAcquireTransforms(TimingConstants::TAG_COLLECTION_TIME);
-    
-    if (!success) {
-        RCLCPP_ERROR(get_logger(), "SCAN_LEFT command failed - no tags detected");
-    } else {
-        printDetectedTags();
-        RCLCPP_INFO(get_logger(), "SCAN_LEFT command completed successfully");
-    }
-    
-    return success;
-}
-
-bool TagPicker::handleScanRightCommand(const std::shared_ptr<GoalHandlePickerAction> goal_handle)
-{
-    RCLCPP_INFO(get_logger(), "Executing SCAN_RIGHT command");
-    
-    auto feedback = std::make_shared<PickerAction::Feedback>();
-    feedback->current_phase = "moving_to_scan_position";
-    feedback->current_tag_id = -1;
-    goal_handle->publish_feedback(feedback);
-    
-    // Move to scan_right configuration
-    if (!moveToConfiguration("scan_right")) {
-        RCLCPP_ERROR(get_logger(), "Failed to move to scan_right configuration");
-        return false;
-    }
-    
-    feedback->current_phase = "searching";
-    goal_handle->publish_feedback(feedback);
-    
-    bool success = collectDetectedTagsAndAcquireTransforms(TimingConstants::TAG_COLLECTION_TIME);
-    
-    if (!success) {
-        RCLCPP_ERROR(get_logger(), "SCAN_RIGHT command failed - no tags detected");
-    } else {
-        printDetectedTags();
-        RCLCPP_INFO(get_logger(), "SCAN_RIGHT command completed successfully");
     }
     
     return success;
@@ -895,6 +662,16 @@ bool TagPicker::handlePickAndPlaceCommand(const std::shared_ptr<GoalHandlePicker
                goal->source_tag_id, goal->target_tag_id, goal->target_tf_name.c_str());
     
     auto feedback = std::make_shared<PickerAction::Feedback>();
+    
+    // Re-scan for tags before operation
+    feedback->current_phase = "searching";
+    feedback->current_tag_id = -1;
+    goal_handle->publish_feedback(feedback);
+    
+    if (!collectDetectedTagsAndAcquireTransforms(1.0)) {
+        RCLCPP_ERROR(get_logger(), "Failed to scan for tags before pick and place operation");
+        return false;
+    }
     
     // Execute pick operation
     feedback->current_phase = "approaching_source";
@@ -919,7 +696,7 @@ bool TagPicker::handlePickAndPlaceCommand(const std::shared_ptr<GoalHandlePicker
         feedback->current_phase = "placing";
         goal_handle->publish_feedback(feedback);
         
-        if (!executePlace(goal->target_tf_name, goal->source_tag_id)) {
+        if (!executePlace(goal->target_tf_name)) {
             RCLCPP_ERROR(get_logger(), "Place operation failed for TF frame %s", goal->target_tf_name.c_str());
             return false;
         }
@@ -931,10 +708,20 @@ bool TagPicker::handlePickAndPlaceCommand(const std::shared_ptr<GoalHandlePicker
         feedback->current_phase = "placing";
         goal_handle->publish_feedback(feedback);
         
-        if (!executePlace(goal->target_tag_id, goal->source_tag_id)) {
+        if (!executePlace(goal->target_tag_id)) {
             RCLCPP_ERROR(get_logger(), "Place operation failed for tag ID %d", goal->target_tag_id);
             return false;
         }
+    }
+    
+    // Return to home position
+    feedback->current_phase = "moving_to_home";
+    feedback->current_tag_id = -1;
+    goal_handle->publish_feedback(feedback);
+    
+    if (!moveToHome()) {
+        RCLCPP_WARN(get_logger(), "Failed to return to home position after pick and place");
+        return false;
     }
     
     RCLCPP_INFO(get_logger(), "PICK_AND_PLACE command completed successfully");

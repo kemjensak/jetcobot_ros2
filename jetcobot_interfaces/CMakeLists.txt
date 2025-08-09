@@ -19,6 +19,8 @@ find_package(rosidl_default_generators REQUIRED)
 rosidl_generate_interfaces(${PROJECT_NAME}
   "action/PickerAction.action"
   "action/TaskAction.action"
+  "msg/ArmTaskStatus.msg"
+  "msg/ArmTodoTask.msg"
   DEPENDENCIES std_msgs geometry_msgs action_msgs
 )
 
