@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<robot name="pinky" xmlns:xacro="http://www.ros.org/wiki/xacro">
+    
+    <xacro:include filename="robot_core.xacro"/>
+    
+    <xacro:include filename="lidar.xacro" />
+    <xacro:include filename="camera.xacro"/>
+    <xacro:include filename="imu.xacro"/>
+
+    <xacro:include filename="robot_gazebo.xacro"/>    
+    <xacro:include filename="gazebo_control.xacro"/>
+
+</robot>

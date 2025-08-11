@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<robot name="pinky" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+    <gazebo reference="left_wheel">
+      <mu1 value="1.2" />
+      <mu2 value="1.2" />
+    </gazebo>
+
+    <gazebo reference="right_wheel">
+      <mu1 value="1.2" />
+      <mu2 value="1.2" />
+    </gazebo>
+
+    <gazebo reference="base_link">
+      <mu1 value="0.01" />
+      <mu2 value="0.01" />
+    </gazebo>
+
+    <gazebo reference="caster">
+      <mu1 value="0.01" />
+      <mu2 value="0.01" />
+    </gazebo>
+</robot>
+
