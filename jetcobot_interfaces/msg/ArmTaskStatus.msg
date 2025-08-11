@@ -1,1 +1,1 @@
-string status
+string status     # "PENDING" | "ASSIGNED" | "INPROGRESS(PICK)" | "INPROGRESS(PLACE)" | "COMPLETE" | "ERROR"

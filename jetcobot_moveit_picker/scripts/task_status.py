@@ -3,7 +3,7 @@ import rclpy
 from rclpy.action import ActionClient
 from rclpy.node import Node
 from jetcobot_interfaces.action import PickerAction
-from jetcobot_interfaces.msg import ArmTaskStatus, ArmTodoTask
+from jetcobot_interfaces.msg import ArmTaskStatus, TaskSimple
 from collections import deque
 
 def map_phase_to_status(phase: str) -> str:
@@ -31,7 +31,7 @@ class TaskStatusNode(Node):
 
         self._client = ActionClient(self, PickerAction, 'picker_action')
         self._status_pub = self.create_publisher(ArmTaskStatus, '/arm_task', 10)
-        self._todo_sub = self.create_subscription(ArmTodoTask, "/arm_todo_task", self.todo_callback, 10)
+        self._todo_sub = self.create_subscription(TaskSimple, "/task", self.todo_callback, 10)
 
         self._last_status = None
         self._busy = False
@@ -63,7 +63,7 @@ class TaskStatusNode(Node):
             self._last_status = status
 
     # ---------- 메인 플로우 ----------
-    def todo_callback(self, msg: ArmTodoTask):
+    def todo_callback(self, msg: TaskSimple):  #ArmTodoTask
         task = (msg.task_type or "").upper().strip()
         self.get_logger().info(f"📩 /arm_todo_task: task_type={task}")
 
