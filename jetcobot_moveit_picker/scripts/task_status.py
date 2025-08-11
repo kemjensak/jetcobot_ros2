@@ -3,9 +3,8 @@ import rclpy
 from rclpy.action import ActionClient
 from rclpy.node import Node
 from jetcobot_interfaces.action import PickerAction
-from jetcobot_interfaces.msg import ArmTaskStatus
 from collections import deque
-from bolt_fms.msg import TaskSimple
+from bolt_fms.msg import TaskSimple , ArmTaskStatus
 
 def map_phase_to_status(phase: str) -> str:
     p = (phase or "").lower()
