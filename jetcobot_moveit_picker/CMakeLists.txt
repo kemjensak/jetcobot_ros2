@@ -69,8 +69,8 @@ ament_python_install_package(${PROJECT_NAME})
 # Install Python executables as ROS 2 nodes
 install(PROGRAMS
       scripts/moveit_mover.py
-      # Add more Python scripts here as needed
-      # scripts/another_script.py
+      scripts/task_status.py
+      scripts/picker_gui.py
       DESTINATION lib/${PROJECT_NAME}
 )
 
@@ -85,11 +85,6 @@ install(
   DESTINATION share/${PROJECT_NAME}
 )
 
-install(PROGRAMS
-  scripts/task_status.py
-  scripts/picker_gui.py
-  DESTINATION lib/${PROJECT_NAME}
-)
 
 ament_export_dependencies(jetcobot_interfaces)
 
