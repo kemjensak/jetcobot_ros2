@@ -27,6 +27,7 @@ find_package(moveit_ros_perception REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(interactive_markers REQUIRED)
+find_package(bolt_fms REQUIRED)
 
 # Optional packages - check if available
 find_package(rviz_visual_tools QUIET)
