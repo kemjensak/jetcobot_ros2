@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.8)
 project(jetcobot_moveit_picker)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  add_compile_options(-Wall -Wextra -Wpedantic -Wno-deprecated-declarations)
+  add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
 # find dependencies
@@ -66,18 +66,6 @@ target_include_directories(tag_picker
 ament_target_dependencies(tag_picker
     ${THIS_PACKAGE_INCLUDE_DEPENDS} Boost)
 
-# Add the new refactored tag_picker
-add_executable(tag_picker_refactored
-    src/tag_picker_refactored.cpp
-    src/gripper_controller.cpp
-    src/tag_detection_manager.cpp
-    src/motion_planner.cpp
-    src/pick_place_executor.cpp)
-target_include_directories(tag_picker_refactored
-    PUBLIC include)
-ament_target_dependencies(tag_picker_refactored
-    ${THIS_PACKAGE_INCLUDE_DEPENDS} Boost)
-
 ament_python_install_package(${PROJECT_NAME})
 
 # Install Python executables as ROS 2 nodes
@@ -88,7 +76,7 @@ install(PROGRAMS
       DESTINATION lib/${PROJECT_NAME}
 )
 
-install(TARGETS tag_picker tag_picker_refactored
+install(TARGETS tag_picker
     DESTINATION lib/${PROJECT_NAME}
 )
 install(DIRECTORY launch
