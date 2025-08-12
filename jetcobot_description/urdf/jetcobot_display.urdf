@@ -70,7 +70,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://jetcobot_description/meshes/1_Link.STL" />
+          filename="package://jetcobot_description/meshes/LInk_1.stl" />
       </geometry>
       <material
         name="">
@@ -84,7 +84,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://jetcobot_description/meshes/1_Link.STL" />
+          filename="package://jetcobot_description/meshes/LInk_1.stl" />
       </geometry>
     </collision>
   </link>
@@ -128,7 +128,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://jetcobot_description/meshes/2_Link.STL" />
+          filename="package://jetcobot_description/meshes/LInk_2.stl" />
       </geometry>
       <material
         name="">
@@ -142,7 +142,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://jetcobot_description/meshes/2_Link.STL" />
+          filename="package://jetcobot_description/meshes/LInk_2.stl" />
       </geometry>
     </collision>
   </link>
@@ -157,7 +157,7 @@
     <child
       link="2_Link" />
     <axis
-      xyz="-0.000732413960501075 -0.999999731784859 0" />
+      xyz="0 -1 0" />
     <limit
       lower="-2.87"
       upper="2.87"
@@ -186,7 +186,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://jetcobot_description/meshes/3_Link.STL" />
+          filename="package://jetcobot_description/meshes/LInk_3.stl" />
       </geometry>
       <material
         name="">
@@ -200,7 +200,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://jetcobot_description/meshes/3_Link.STL" />
+          filename="package://jetcobot_description/meshes/LInk_3.stl" />
       </geometry>
     </collision>
   </link>
@@ -215,7 +215,7 @@
     <child
       link="3_Link" />
     <axis
-      xyz="0.000732413960503172 -0.999999731784859 0" />
+      xyz="0 -1 0" />
     <limit
       lower="-2.87"
       upper="2.87"
@@ -244,7 +244,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://jetcobot_description/meshes/4_Link.STL" />
+          filename="package://jetcobot_description/meshes/LInk_4.stl" />
       </geometry>
       <material
         name="">
@@ -258,7 +258,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://jetcobot_description/meshes/4_Link.STL" />
+          filename="package://jetcobot_description/meshes/LInk_4.stl" />
       </geometry>
     </collision>
   </link>
@@ -273,7 +273,7 @@
     <child
       link="4_Link" />
     <axis
-      xyz="0.000732413960503879 -0.999999731784859 0" />
+      xyz="0 -1 0" />
     <limit
       lower="-2.87"
       upper="2.87"
@@ -302,7 +302,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://jetcobot_description/meshes/5_Link.STL" />
+          filename="package://jetcobot_description/meshes/LInk_5.stl" />
       </geometry>
       <material
         name="">
@@ -316,7 +316,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://jetcobot_description/meshes/5_Link.STL" />
+          filename="package://jetcobot_description/meshes/LInk_5.stl" />
       </geometry>
     </collision>
   </link>
@@ -331,7 +331,7 @@
     <child
       link="5_Link" />
     <axis
-      xyz="-1.63178762811156E-05 0 0.999999999866863" />
+      xyz="0 0 1" />
     <limit
       lower="-2.87"
       upper="2.87"
@@ -360,7 +360,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://jetcobot_description/meshes/6_Link.STL" />
+          filename="package://jetcobot_description/meshes/LInk_6.stl" />
       </geometry>
       <material
         name="">
@@ -374,7 +374,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://jetcobot_description/meshes/6_Link.STL" />
+          filename="package://jetcobot_description/meshes/LInk_6.stl" />
       </geometry>
     </collision>
   </link>
@@ -389,7 +389,7 @@
     <child
       link="6_Link" />
     <axis
-      xyz="0.999999508360072 0.00099147029270504 -1.63178800449753E-05" />
+      xyz="1 0 0" />
     <limit
       lower="-3.05"
       upper="3.05"

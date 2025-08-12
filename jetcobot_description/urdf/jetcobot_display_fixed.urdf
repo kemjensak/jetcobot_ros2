@@ -49,7 +49,7 @@
     </collision>
   </link>
   <link
-    name="1_Link">
+  name="link_1">
     <inertial>
       <origin
         xyz="-1.31131235135193E-05 -0.00680904441821013 0.0422096528553218"
@@ -84,12 +84,12 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://jetcobot_description/meshes/Link_1.STL" />
+      filename="package://jetcobot_description/meshes/Link_1.STL" />
       </geometry>
     </collision>
   </link>
   <joint
-    name="1_Joint"
+    name="joint_1"
     type="revolute">
     <origin
       xyz="0 0 0.074520000000001"
@@ -97,17 +97,17 @@
     <parent
       link="base_link" />
     <child
-      link="1_Link" />
+  link="link_1" />
     <axis
       xyz="0 0 1" />
     <limit
-      lower="-3.14"
-      upper="3.14"
+      lower="-2.87"
+      upper="2.87"
       effort="0"
       velocity="0" />
   </joint>
   <link
-    name="2_Link">
+  name="link_2">
     <inertial>
       <origin
         xyz="-7.75613648330207E-06 -0.0235034548911008 0.0516000320310254"
@@ -142,30 +142,30 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://jetcobot_description/meshes/Link_2.STL" />
+      filename="package://jetcobot_description/meshes/Link_2.STL" />
       </geometry>
     </collision>
   </link>
   <joint
-    name="2_Joint"
+    name="joint_2"
     type="revolute">
     <origin
       xyz="-2.56344886174708E-05 -0.0349999906124702 0.06"
       rpy="0 0 0" />
     <parent
-      link="1_Link" />
+  link="link_1" />
     <child
-      link="2_Link" />
+  link="link_2" />
     <axis
-      xyz="0 -1 0" />
+      xyz="-0.000732413960501075 -0.999999731784859 0" />
     <limit
-      lower="-2.9"
-      upper="2.9"
+      lower="-2.87"
+      upper="2.87"
       effort="0"
       velocity="0" />
   </joint>
   <link
-    name="3_Link">
+  name="link_3">
     <inertial>
       <origin
         xyz="1.6839879676764E-05 0.023294180860769 0.0437213142176436"
@@ -200,30 +200,30 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://jetcobot_description/meshes/Link_3.STL" />
+      filename="package://jetcobot_description/meshes/Link_3.STL" />
       </geometry>
     </collision>
   </link>
   <joint
-    name="3_Joint"
+    name="joint_3"
     type="revolute">
     <origin
       xyz="0 0.00678999562722426 0.109999999944807"
       rpy="0 0 0" />
     <parent
-      link="2_Link" />
+  link="link_2" />
     <child
-      link="3_Link" />
+  link="link_3" />
     <axis
-      xyz="0 -1 0" />
+      xyz="0.000732413960503172 -0.999999731784859 0" />
     <limit
-      lower="-2.3"
-      upper="2.3"
+      lower="-2.87"
+      upper="2.87"
       effort="0"
       velocity="0" />
   </joint>
   <link
-    name="4_Link">
+  name="link_4">
     <inertial>
       <origin
         xyz="-4.84201074579515E-06 -0.0230260014326339 0.0076796931512822"
@@ -258,30 +258,30 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://jetcobot_description/meshes/Link_4.STL" />
+      filename="package://jetcobot_description/meshes/Link_4.STL" />
       </geometry>
     </collision>
   </link>
   <joint
-    name="4_Joint"
+    name="joint_4"
     type="revolute">
     <origin
       xyz="0 -0.00134543437627838 0.0959999996761873"
       rpy="0 0 0" />
     <parent
-      link="3_Link" />
+  link="link_3" />
     <child
-      link="4_Link" />
+  link="link_4" />
     <axis
-      xyz="0 -1 0" />
+      xyz="0.000732413960503879 -0.999999731784859 0" />
     <limit
-      lower="-2.6"
-      upper="2.6"
+      lower="-2.87"
+      upper="2.87"
       effort="0"
       velocity="0" />
   </joint>
   <link
-    name="5_Link">
+  name="link_5">
     <inertial>
       <origin
         xyz="0.000920147444179747 -8.87115340001549E-05 0.0288537732000537"
@@ -316,30 +316,30 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://jetcobot_description/meshes/Link_5.STL" />
+      filename="package://jetcobot_description/meshes/Link_5.STL" />
       </geometry>
     </collision>
   </link>
   <joint
-    name="5_Joint"
+    name="joint_5"
     type="revolute">
     <origin
       xyz="-2.51335035583085E-05 -0.0335399905878049 0.0348292449246146"
       rpy="0 0 0" />
     <parent
-      link="4_Link" />
+  link="link_4" />
     <child
-      link="5_Link" />
+  link="link_5" />
     <axis
-      xyz="0 0 1" />
+      xyz="-1.63178762811156E-05 0 0.999999999866863" />
     <limit
-      lower="-2.5"
-      upper="2.5"
+      lower="-2.87"
+      upper="2.87"
       effort="0"
       velocity="0" />
   </joint>
   <link
-    name="6_Link">
+  name="link_6">
     <inertial>
       <origin
         xyz="0.00719200131540984 -7.65911084783799E-06 3.05896694446917E-06"
@@ -374,87 +374,34 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://jetcobot_description/meshes/Link_6.STL" />
+      filename="package://jetcobot_description/meshes/Link_6.STL" />
       </geometry>
     </collision>
   </link>
   <joint
-    name="6_Joint"
+    name="joint_6"
     type="revolute">
     <origin
       xyz="0.0319651869150594 -2.83148869312522E-05 0.03992044757551"
       rpy="0.785398 0 0" />
     <parent
-      link="5_Link" />
+  link="link_5" />
     <child
-      link="6_Link" />
+  link="link_6" />
     <axis
-      xyz="1 0 0" />
+      xyz="0.999999508360072 0.00099147029270504 -1.63178800449753E-05" />
     <limit
-      lower="-2.84"
-      upper="2.84"
+      lower="-3.05"
+      upper="3.05"
       effort="0"
       velocity="0" />
   </joint>
   <link
-    name="gripper_link">
-    <inertial>
-      <origin
-        xyz="-0.0127383844547501 -0.00102792378260975 0.00665087237013234"
-        rpy="0 0 0" />
-      <mass
-        value="0.122679365027093" />
-      <inertia
-        ixx="3.97803940650974E-05"
-        ixy="1.74508723344598E-07"
-        ixz="5.13423679351684E-07"
-        iyy="4.07773392923937E-05"
-        iyz="-2.34868583366612E-06"
-        izz="5.19432393430342E-05" />
-    </inertial>
-    <visual>
-      <origin
-        xyz="0 0 0"
-        rpy="0 0 0" />
-      <geometry>
-        <mesh
-          filename="package://jetcobot_description/meshes/jiazhua_Link.STL" />
-      </geometry>
-      <material
-        name="">
-        <color
-          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
-      </material>
-    </visual>
-    <collision>
-      <origin
-        xyz="0 0 0"
-        rpy="0 0 0" />
-      <geometry>
-        <mesh
-          filename="package://jetcobot_description/meshes/jiazhua_Link.STL" />
-      </geometry>
-    </collision>
-  </link>
-  <joint
-    name="gripper_Joint"
-    type="fixed">
-    <origin
-      xyz="0.0639055160565718 -5.66075356250029E-05 -0.00773230647256523"
-      rpy="0 0 0" />
-    <parent
-      link="6_Link" />
-    <child
-      link="gripper_link" />
-    <axis
-      xyz="0 0 0" />
-  </joint>
-  <link
-    name="jetcocam">
+    name="camera_link">
     <inertial>
       <origin
         xyz="-0.00275231085999596 -0.000213763964140273 0.00241270444256747"
-        rpy="0 -1.5707963 1.5707963" />
+        rpy="0 0 0" />
       <mass
         value="0.0173158610148997" />
       <inertia
@@ -467,8 +414,8 @@
     </inertial>
     <visual>
       <origin
-        xyz="0 0.01 0"
-        rpy="0 -1.5707963 1.5707963" />
+        xyz="0 0 0"
+        rpy="0 0 0" />
       <geometry>
         <mesh
           filename="package://jetcobot_description/meshes/camera_Link.STL" />
@@ -481,8 +428,8 @@
     </visual>
     <collision>
       <origin
-        xyz="0 0.01 0"
-        rpy="0 -1.5707963 1.5707963" />
+        xyz="0 0 0"
+        rpy="0 0 0" />
       <geometry>
         <mesh
           filename="package://jetcobot_description/meshes/camera_Link.STL" />
@@ -490,38 +437,189 @@
     </collision>
   </link>
   <joint
-    name="camera_joint"
+    name="camera_Joint"
     type="fixed">
     <origin
-      xyz="0.033 0 0.045"
-      rpy="-1.5707963 0 -1.5707963" />
+      xyz="0.033 0 0.035"
+      rpy="0 0 0" />
     <parent
-      link="6_Link" />
+  link="link_6" />
     <child
-      link="jetcocam" />
+      link="camera_link" />
     <axis
       xyz="0 0 0" />
   </joint>
-  <link name="TCP">
-        <visual>
-            <geometry>
-                <box size="0.01 0.01 0.01"/>
-            </geometry>
-            <origin xyz="0 0 0" rpy="0 0 0"/>
-        </visual>
+  <link name="gripper_base">
+    <visual>
+      <geometry>
+       <!--- 0.0 0 -0.04 -->
+       <mesh filename="package://jetcobot_description/meshes/gripper_base.dae"/>
+      </geometry>
+    <origin xyz = "0.0 0 -0.012 " rpy = " 0 0 0"/>
+    </visual>
+    <collision>
+      <geometry>
+       <!--- 0.0 0 -0.04 -->
+       <mesh filename="package://jetcobot_description/meshes/gripper_base.dae"/>
+      </geometry>
+    <origin xyz = "0.0 0 -0.012 " rpy = " 0 0 0"/>
+    </collision>
   </link>
-  <joint name="TCP_joint" type="fixed">
-      <parent link="gripper_link"/>
-      <child link="TCP"/>
-      <origin xyz="0.05 0 0.0177" rpy="-1.5707963 0 -1.5707963"/>
+
+  <link name="gripper_left1">
+    <visual>
+      <geometry>
+       <!--- 0.0 0 -0.04 -->
+       <mesh filename="package://jetcobot_description/meshes/gripper_left1.dae"/>
+      </geometry>
+    <origin xyz = "0.039 -0.0133 -0.012 " rpy = " 0 0 0"/>
+    <!-- <origin xyz = "0.0 0 -0.012 " rpy = " 0 0 0"/> -->
+    </visual>
+    <collision>
+      <geometry>
+       <mesh filename="package://jetcobot_description/meshes/gripper_left1.dae"/>
+      </geometry>
+        <origin xyz = "0.039 -0.0133 -0.012 " rpy = " 0 0 0"/>
+    </collision>
+  </link>
+
+  <link name="gripper_left2">
+    <visual>
+      <geometry>
+       <mesh filename="package://jetcobot_description/meshes/gripper_left2.dae"/>
+      </geometry>
+    <origin xyz = "0.005 -0.0195 -0.012 " rpy = " 0 0 0"/>
+    </visual>
+    <collision>
+      <geometry>
+       <mesh filename="package://jetcobot_description/meshes/gripper_left2.dae"/>
+      </geometry>
+        <origin xyz = "0.005 -0.0195 -0.012 " rpy = " 0 0 0"/>
+    </collision>
+  </link>
+
+  <link name="gripper_left3">
+    <visual>
+      <geometry>
+       <mesh filename="package://jetcobot_description/meshes/gripper_left3.dae"/>
+      </geometry>
+    <origin xyz = "0.012 0.0025 -0.012 " rpy = " 0 0 0"/>
+    <!-- <origin xyz = "0.0 0 0 " rpy = " 0 0 0"/> -->
+
+    </visual>
+    <collision>
+      <geometry>
+       <mesh filename="package://jetcobot_description/meshes/gripper_left3.dae"/>
+      </geometry>
+    <origin xyz = "0.012 0.0025 -0.012 " rpy = " 0 0 0"/>
+    </collision>
+  </link>
+
+  <link name="gripper_right1">
+    <visual>
+      <geometry>
+       <mesh filename="package://jetcobot_description/meshes/gripper_right1.dae"/>
+      </geometry>
+    <origin xyz = "-0.039 -0.0133 -0.012 " rpy = " 0 0 0"/>
+    </visual>
+    <collision>
+      <geometry>
+       <mesh filename="package://jetcobot_description/meshes/gripper_right1.dae"/>
+      </geometry>
+        <origin xyz = "-0.039 -0.0133 -0.012 " rpy = " 0 0 0"/>
+    </collision>
+  </link>
+
+  <link name="gripper_right2">
+    <visual>
+      <geometry>
+       <mesh filename="package://jetcobot_description/meshes/gripper_right2.dae"/>
+      </geometry>
+    <origin xyz = "-0.005 -0.0195 -0.012 " rpy = " 0 0 0"/>
+    </visual>
+    <collision>
+      <geometry>
+       <mesh filename="package://jetcobot_description/meshes/gripper_right2.dae"/>
+      </geometry>
+        <origin xyz = "-0.005 -0.0195 -0.012 " rpy = " 0 0 0"/>
+    </collision>
+  </link>
+
+  <link name="gripper_right3">
+    <visual>
+      <geometry>
+       <mesh filename="package://jetcobot_description/meshes/gripper_right3.dae"/>
+      </geometry>
+    <origin xyz = "-0.012 0.0025 -0.012 " rpy = " 0 0 0"/>
+    </visual>
+    <collision>
+      <geometry>
+       <mesh filename="package://jetcobot_description/meshes/gripper_right3.dae"/>
+      </geometry>
+    <origin xyz = "-0.012 0.0025 -0.012" rpy = " 0 0 0"/>
+    </collision>
+  </link>
+
+  <joint name="link_6_to_gripper_base" type="fixed">
+    <!-- <axis xyz="0 0 1"/>
+    <limit effort = "1000.0" lower = "-3.14" upper = "3.14159" velocity = "0"/> -->
+  <parent link="link_6"/>
+    <child link="gripper_base"/>
+    <!-- <origin xyz= "0 0.0 0" rpy = "-1.5708 0 0"/>   -->
+    <origin xyz= "0.045 0 0" rpy = "3.141592653589793 0 1.570796326794897"/>  
   </joint>
 
-  <link name="ov3360">
-  </link>
-  <joint name="ov3360_joint" type="fixed">
-    <parent link="jetcocam"/>
-    <child link="ov3360"/>
-    <origin xyz="0.0 0.0 0.0" rpy="0 0 3.141592"/>
+  <joint name="gripper_controller" type="revolute">
+    <axis xyz="0 0 1"/>
+    <limit effort = "1000.0" lower = "-0.7" upper = "0.15" velocity = "0"/>
+    <parent link="gripper_base"/>
+    <child link="gripper_left3"/>
+    <origin xyz= "-0.012 -0.0025 0" rpy = "0 0 0"/> 
   </joint>
 
+  <joint name="gripper_base_to_gripper_left2" type="revolute">
+    <axis xyz="0 0 1"/>
+    <limit effort = "1000.0" lower = "-0.8" upper = "0.5" velocity = "0"/>
+    <parent link="gripper_base"/>
+    <child link="gripper_left2"/>
+    <origin xyz= "-0.005 0.0195 0" rpy = "0 0 0"/> 
+    <mimic joint="gripper_controller" multiplier="1.0" offset="0" />
+  </joint>
+
+  <joint name="gripper_left3_to_gripper_left1" type="revolute">
+    <axis xyz="0 0 1"/>
+    <limit effort = "1000.0" lower = "-0.5" upper = "0.5" velocity = "0"/>
+    <parent link="gripper_left3"/>
+    <child link="gripper_left1"/>
+    <origin xyz= "-0.027 0.016 0" rpy = "0 0 0"/> 
+    <mimic joint="gripper_controller" multiplier="-1.0" offset="0" />
+  </joint>
+
+
+  <joint name="gripper_base_to_gripper_right3" type="revolute">
+    <axis xyz="0 0 1"/>
+    <limit effort = "1000.0" lower = "-0.15" upper = "0.7" velocity = "0"/>
+    <parent link="gripper_base"/>
+    <child link="gripper_right3"/>
+    <origin xyz= "0.012 -0.0025 0" rpy = "0 0 0"/> 
+    <mimic joint="gripper_controller" multiplier="-1.0" offset="0" />
+  </joint>
+
+  <joint name="gripper_base_to_gripper_right2" type="revolute">
+    <axis xyz="0 0 1"/>
+    <limit effort = "1000.0" lower = "-0.5" upper = "0.8" velocity = "0"/>
+    <parent link="gripper_base"/>
+    <child link="gripper_right2"/>
+    <origin xyz= "0.005 0.0195 0" rpy = "0 0 0"/> 
+    <mimic joint="gripper_controller" multiplier="-1.0" offset="0" />
+  </joint>
+
+  <joint name="gripper_right3_to_gripper_right1" type="revolute">
+    <axis xyz="0 0 1"/>
+    <limit effort = "1000.0" lower = "-0.5" upper = "0.5" velocity = "0"/>
+    <parent link="gripper_right3"/>
+    <child link="gripper_right1"/>
+    <origin xyz= "0.027 0.016 0" rpy = "0 0 0"/> 
+    <mimic joint="gripper_controller" multiplier="1.0" offset="0" />
+  </joint>
 </robot>
