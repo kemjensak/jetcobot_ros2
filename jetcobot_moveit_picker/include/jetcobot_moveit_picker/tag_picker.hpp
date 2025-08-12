@@ -109,6 +109,9 @@ private:
     std::set<int> detected_tag_ids_;
     std::chrono::steady_clock::time_point detection_start_time_;
     bool is_collecting_detections_;
+    
+    // Track published static transforms for removal
+    std::set<std::string> published_static_frames_;
 
     // ============================================================================
     // ACTION SERVER CALLBACKS
@@ -174,6 +177,12 @@ private:
     void publishGroundProjectedTransforms(int source_tag_id);
 
     /**
+     * @brief Remove static transforms for missing tags
+     * @param source_tag_id Tag ID to determine which frames to remove (-1 for SCAN_FRONT)
+     */
+    void removeStaticTransformsForMissingTags(int source_tag_id);
+
+    /**
      * @brief Create ground-projected transform that removes roll and pitch
      * @param original_transform Original transform to project
      * @param output_frame_id Output frame name
@@ -211,6 +220,12 @@ private:
      * @param source_tag_id Tag ID to determine which collision objects to create (-1 for SCAN_FRONT)
      */
     void createCollisionObjectsAtPinkyBagPoses(int source_tag_id);
+
+    /**
+     * @brief Remove collision objects when corresponding tags are no longer detected
+     * @param source_tag_id Tag ID to determine which collision objects to remove (-1 for SCAN_FRONT)
+     */
+    void removeCollisionObjectsForMissingTags(int source_tag_id);
 
     /**
      * @brief Create a box collision object at specified pose
@@ -418,6 +433,12 @@ private:
      * @param goal_handle Action goal handle
      */
     bool handleScanPinkyCommand(const std::shared_ptr<GoalHandlePickerAction> goal_handle);
+
+    /**
+     * @brief Handle CLEAR_PINKY command - remove all pinky-related static transforms and collision objects
+     * @param goal_handle Action goal handle
+     */
+    bool handleClearPinkyCommand(const std::shared_ptr<GoalHandlePickerAction> goal_handle);
 
     /**
      * @brief Handle PICK_AND_PLACE command - execute complete pick and place operation
