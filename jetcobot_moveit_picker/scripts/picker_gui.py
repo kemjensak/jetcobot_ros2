@@ -133,7 +133,8 @@ class PickerGUI(QMainWindow):
     # Available commands
     COMMANDS = [
         "HOME",
-        "SCAN", 
+        "SCAN",
+        "SCAN_PINKY", 
         "SCAN_FRONT",
         "SCAN_LEFT", 
         "SCAN_RIGHT",
@@ -225,7 +226,7 @@ class PickerGUI(QMainWindow):
         # Source Tag ID
         goal_group_layout.addWidget(QLabel("Source Tag ID:"), 1, 0)
         self.source_tag_edit = QLineEdit()
-        self.source_tag_edit.setPlaceholderText("Enter source tag ID (for PICK_AND_PLACE)")
+        self.source_tag_edit.setPlaceholderText("Enter tag ID (for PICK_AND_PLACE or SCAN_PINKY)")
         goal_group_layout.addWidget(self.source_tag_edit, 1, 1)
         
         # Target Tag ID
@@ -319,13 +320,16 @@ class PickerGUI(QMainWindow):
         """Handle command selection change"""
         # Enable/disable fields based on command
         is_pick_and_place = (command == "PICK_AND_PLACE")
+        is_scan_pinky = (command == "SCAN_PINKY")
         
-        self.source_tag_edit.setEnabled(is_pick_and_place)
+        # Enable source tag for both PICK_AND_PLACE and SCAN_PINKY
+        self.source_tag_edit.setEnabled(is_pick_and_place or is_scan_pinky)
         self.target_tag_edit.setEnabled(is_pick_and_place)
         self.target_tf_edit.setEnabled(is_pick_and_place)
         
-        if not is_pick_and_place:
+        if not (is_pick_and_place or is_scan_pinky):
             self.source_tag_edit.clear()
+        if not is_pick_and_place:
             self.target_tag_edit.clear()
             self.target_tf_edit.clear()
     
@@ -360,6 +364,12 @@ class PickerGUI(QMainWindow):
             if target_tag_id == -1 and not target_tf_name:
                 QMessageBox.warning(self, "Missing Input", 
                                   "Either Target Tag ID or Target TF Frame is required for PICK_AND_PLACE!")
+                return
+        
+        # Validate SCAN_PINKY requirements
+        if command == "SCAN_PINKY":
+            if source_tag_id == -1:
+                QMessageBox.warning(self, "Missing Input", "Source Tag ID is required for SCAN_PINKY!")
                 return
         
         # Send goal

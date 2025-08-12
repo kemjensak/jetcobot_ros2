@@ -13,8 +13,10 @@
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_action/rclcpp_action.hpp>
 #include <moveit/move_group_interface/move_group_interface.hpp>
+#include <moveit/planning_scene_interface/planning_scene_interface.hpp>
 #include <tf2_ros/transform_listener.h>
 #include <tf2_ros/buffer.h>
+#include <tf2_ros/static_transform_broadcaster.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2/LinearMath/Matrix3x3.h>
@@ -26,6 +28,8 @@
 #include <std_msgs/msg/string.hpp>
 #include <apriltag_msgs/msg/april_tag_detection_array.hpp>
 #include <jetcobot_interfaces/action/picker_action.hpp>
+#include <moveit_msgs/msg/collision_object.hpp>
+#include <shape_msgs/msg/solid_primitive.hpp>
 
 class TagPicker : public rclcpp::Node
 {
@@ -87,6 +91,7 @@ private:
     
     // Core MoveIt and ROS interfaces
     std::shared_ptr<moveit::planning_interface::MoveGroupInterface> move_group_interface_;
+    std::shared_ptr<moveit::planning_interface::PlanningSceneInterface> planning_scene_interface_;
     std::unique_ptr<tf2_ros::Buffer> tf_buffer_;
     std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
     
@@ -95,8 +100,12 @@ private:
     rclcpp::Subscription<apriltag_msgs::msg::AprilTagDetectionArray>::SharedPtr detection_sub_;
     rclcpp_action::Server<PickerAction>::SharedPtr action_server_;
     
+    // TF broadcasters
+    std::shared_ptr<tf2_ros::StaticTransformBroadcaster> static_tf_broadcaster_;
+    
     // Data storage
     std::map<int, geometry_msgs::msg::TransformStamped> stored_tag_transforms_;
+    std::map<std::string, geometry_msgs::msg::TransformStamped> stored_pinky_transforms_;
     std::set<int> detected_tag_ids_;
     std::chrono::steady_clock::time_point detection_start_time_;
     bool is_collecting_detections_;
@@ -143,20 +152,89 @@ private:
     bool getStoredTagTransform(int tag_id, geometry_msgs::msg::TransformStamped& tag_transform);
 
     /**
+     * @brief Get stored pinky transform by TF name
+     * @param tf_name TF frame name to retrieve
+     * @param pinky_transform Output transform
+     * @return true if transform found, false otherwise
+     */
+    bool getStoredPinkyTransform(const std::string& tf_name, geometry_msgs::msg::TransformStamped& pinky_transform);
+
+    /**
+     * @brief Store pinky loadpoint transforms
+     * @param tag_id Associated tag ID for reference
+     * @return true if any transforms acquired, false otherwise
+     */
+    bool storePinkyLoadpointTransforms(int tag_id);
+
+    /**
+     * @brief Publish ground-projected transforms for scan commands
+     * @brief Creates ground-projected (roll=0, pitch=0) static TF frames
+     * @param source_tag_id Tag ID to determine which frames to project (-1 for SCAN_FRONT)
+     */
+    void publishGroundProjectedTransforms(int source_tag_id);
+
+    /**
+     * @brief Create ground-projected transform that removes roll and pitch
+     * @param original_transform Original transform to project
+     * @param output_frame_id Output frame name
+     * @return Ground-projected transform
+     */
+    geometry_msgs::msg::TransformStamped createGroundProjectedTransform(
+        const geometry_msgs::msg::TransformStamped& original_transform, 
+        const std::string& output_frame_id);
+
+    /**
+     * @brief Convert quaternion to euler angles
+     * @param x Quaternion x component
+     * @param y Quaternion y component  
+     * @param z Quaternion z component
+     * @param w Quaternion w component
+     * @return Euler angles [roll, pitch, yaw]
+     */
+    std::vector<double> eulerFromQuaternion(double x, double y, double z, double w);
+
+    /**
+     * @brief Convert euler angles to quaternion
+     * @param roll Roll angle in radians
+     * @param pitch Pitch angle in radians  
+     * @param yaw Yaw angle in radians
+     * @return Quaternion [x, y, z, w]
+     */
+    std::vector<double> quaternionFromEuler(double roll, double pitch, double yaw);
+
+    // ============================================================================
+    // COLLISION OBJECT MANAGEMENT
+    // ============================================================================
+    
+    /**
+     * @brief Create collision objects at pinky bag poses after scan commands
+     * @param source_tag_id Tag ID to determine which collision objects to create (-1 for SCAN_FRONT)
+     */
+    void createCollisionObjectsAtPinkyBagPoses(int source_tag_id);
+
+    /**
+     * @brief Create a box collision object at specified pose
+     * @param object_id Unique ID for the collision object
+     * @param pose Pose where to place the collision object
+     * @param dimensions Box dimensions [x, y, z] in meters
+     * @return CollisionObject message
+     */
+    moveit_msgs::msg::CollisionObject createBoxCollisionObject(
+        const std::string& object_id,
+        const geometry_msgs::msg::Pose& pose,
+        const std::vector<double>& dimensions);
+
+    // ============================================================================
+    // TAG DETECTION AND MANAGEMENT
+    // ============================================================================
+    
+    /**
      * @brief Collect detected tags and acquire their transforms
      * @param collection_time_seconds Time to collect detections
      * @return true if any transforms acquired, false otherwise
      */
     bool collectDetectedTagsAndAcquireTransforms(double collection_time_seconds = 1.0);
 
-    /**
-     * @brief Get set of detected tag IDs
-     * @return Set of detected tag IDs
-     */
-    // ============================================================================
-    // TAG DETECTION AND MANAGEMENT
-    // ============================================================================
-    
     /**
      * @brief Get detected tag IDs
      * @return Set of detected tag IDs
@@ -334,6 +412,12 @@ private:
      * @brief Handle SCAN_RIGHT command - move to right scan position and scan
      */
     bool handleScanRightCommand(const std::shared_ptr<GoalHandlePickerAction> goal_handle);
+
+    /**
+     * @brief Handle SCAN_PINKY command - approach specific tag and store tag + pinky loadpoint poses
+     * @param goal_handle Action goal handle
+     */
+    bool handleScanPinkyCommand(const std::shared_ptr<GoalHandlePickerAction> goal_handle);
 
     /**
      * @brief Handle PICK_AND_PLACE command - execute complete pick and place operation
