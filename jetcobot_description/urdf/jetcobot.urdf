@@ -103,8 +103,9 @@
     <limit
       lower="-3.14"
       upper="3.14"
-      effort="0"
-      velocity="0" />
+      effort="50.0"
+      acceleration="3.0"
+      velocity="2.5" />
   </joint>
   <link
     name="2_Link">
@@ -161,8 +162,9 @@
     <limit
       lower="-2.9"
       upper="2.9"
-      effort="0"
-      velocity="0" />
+      effort="40.0"
+      acceleration="3.0"
+      velocity="2.5" />
   </joint>
   <link
     name="3_Link">
@@ -219,8 +221,9 @@
     <limit
       lower="-2.3"
       upper="2.3"
-      effort="0"
-      velocity="0" />
+      effort="30.0"
+      acceleration="3.0"
+      velocity="2.5" />
   </joint>
   <link
     name="4_Link">
@@ -277,8 +280,9 @@
     <limit
       lower="-2.6"
       upper="2.6"
-      effort="0"
-      velocity="0" />
+      effort="20.0"
+      acceleration="3.0"
+      velocity="2.5" />
   </joint>
   <link
     name="5_Link">
@@ -335,8 +339,9 @@
     <limit
       lower="-2.5"
       upper="2.5"
-      effort="0"
-      velocity="0" />
+      effort="15.0"
+      acceleration="3.0"
+      velocity="2.5" />
   </joint>
   <link
     name="6_Link">
@@ -393,8 +398,9 @@
     <limit
       lower="-2.84"
       upper="2.84"
-      effort="0"
-      velocity="0" />
+      effort="10.0"
+      acceleration="3.0"
+      velocity="2.5" />
   </joint>
   <link
     name="gripper_link">

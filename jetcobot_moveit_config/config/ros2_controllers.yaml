@@ -31,4 +31,4 @@ arm_group_controller:
 
 joint_state_broadcaster:
   ros__parameters:
-    use_local_topics: true
+    use_local_topics: false
