@@ -3,8 +3,9 @@ import rclpy
 from rclpy.action import ActionClient
 from rclpy.node import Node
 from jetcobot_interfaces.action import PickerAction
-from jetcobot_interfaces.msg import ArmTaskStatus, TaskSimple
 from collections import deque
+from bolt_fms.msg import TaskSimple
+from std_msgs.msg import String
 
 def map_phase_to_status(phase: str) -> str:
     p = (phase or "").lower()
@@ -30,7 +31,7 @@ class TaskStatusNode(Node):
         self.unload_target_tag_id = int(self.get_parameter('unload_target_tag_id').value)
 
         self._client = ActionClient(self, PickerAction, 'picker_action')
-        self._status_pub = self.create_publisher(ArmTaskStatus, '/arm_task', 10)
+        self._status_pub = self.create_publisher(String, '/task_status', 10)
         self._todo_sub = self.create_subscription(TaskSimple, "/task", self.todo_callback, 10)
 
         self._last_status = None
@@ -56,16 +57,16 @@ class TaskStatusNode(Node):
     # ---------- 공통 유틸 ----------
     def publish_status(self, status: str, extra_log: str = ""):
         if status != self._last_status:
-            msg = ArmTaskStatus()
-            msg.status = status
+            msg = String()
+            msg.data = status
             self._status_pub.publish(msg)
-            self.get_logger().info(f"[REPORT] /arm_task => {status} {extra_log}")
+            self.get_logger().info(f"[REPORT] /task_status => {status} {extra_log}")
             self._last_status = status
 
     # ---------- 메인 플로우 ----------
     def todo_callback(self, msg: TaskSimple):  #ArmTodoTask
         task = (msg.task_type or "").upper().strip()
-        self.get_logger().info(f"📩 /arm_todo_task: task_type={task}")
+        self.get_logger().info(f"📩 /task: task_type={task}")
 
         if self._busy:
             self.get_logger().warn("Busy; ignoring new task.")
