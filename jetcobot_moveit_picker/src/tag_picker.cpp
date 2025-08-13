@@ -41,7 +41,8 @@ bool TagPicker::execute()
     move_group_interface_->setMaxVelocityScalingFactor(1.0);
     move_group_interface_->setPlanningTime(10.0);  // Set planning time to 15 seconds
     move_group_interface_->setNumPlanningAttempts(200);
-    
+    move_group_interface_->setWorkspace(-0.33, -0.4, -0.01, 0.5, 0.29, 1.0);
+
     openGripperToHoldingPosition();
     // controlGripper(100);  // Open gripper fully to start fresh
 
@@ -921,10 +922,10 @@ bool TagPicker::handleScanFrontCommand(const std::shared_ptr<GoalHandlePickerAct
         printDetectedTags();
         
         // Publish ground-projected transforms for front tags
-        publishGroundProjectedTransforms(-1);  // -1 indicates SCAN_FRONT command
+        // publishGroundProjectedTransforms(-1);  // -1 indicates SCAN_FRONT command
         
         // Create collision objects at pinky bag poses
-        createCollisionObjectsAtPinkyBagPoses(-1);  // -1 indicates SCAN_FRONT command
+        // createCollisionObjectsAtPinkyBagPoses(-1);  // -1 indicates SCAN_FRONT command
         
         RCLCPP_INFO(get_logger(), "SCAN_FRONT command completed successfully");
     }
@@ -994,76 +995,105 @@ bool TagPicker::handleScanRightCommand(const std::shared_ptr<GoalHandlePickerAct
 
 bool TagPicker::handleScanPinkyCommand(const std::shared_ptr<GoalHandlePickerAction> goal_handle)
 {
-    const auto goal = goal_handle->get_goal();
-    RCLCPP_INFO(get_logger(), "Executing SCAN_PINKY command for tag ID: %d", goal->source_tag_id);
+    RCLCPP_INFO(get_logger(), "Executing SCAN_PINKY command for stored tags 31, 32, 33");
     
     auto feedback = std::make_shared<PickerAction::Feedback>();
-    feedback->current_phase = "pinky_scanning";
-    feedback->current_tag_id = goal->source_tag_id;
-    goal_handle->publish_feedback(feedback);
     
-    // Check if we have a stored transform for the target tag
-    geometry_msgs::msg::TransformStamped tag_transform;
-    if (!getStoredTagTransform(goal->source_tag_id, tag_transform)) {
-        RCLCPP_ERROR(get_logger(), "Cannot find stored transform for tag ID %d. Run SCAN command first.", goal->source_tag_id);
-        return false;
-    }
+    // Define target tag IDs for pinky scanning
+    std::vector<int> target_tags = {31, 32, 33};
+    std::vector<int> processed_tags;
+    bool overall_success = false;
     
-    // Move to the tag's position to get a more precise pose
-    feedback->current_phase = "approaching_target";
-    goal_handle->publish_feedback(feedback);
-    
-    if (!moveToReacquireTagPosition(tag_transform, goal->source_tag_id)) {
-        RCLCPP_ERROR(get_logger(), "Failed to move to scan position for tag %d", goal->source_tag_id);
-        return false;
-    }
-    
-    // Wait a moment for the tag detection to stabilize
-    feedback->current_phase = "updating_poses";
-    goal_handle->publish_feedback(feedback);
-    
-    std::this_thread::sleep_for(std::chrono::milliseconds(TimingConstants::STABILIZE_DELAY_MS));
-    
-    // Try to update the stored tag pose with more precise data
-    bool tag_update_success = updateStoredTagIfVisible(goal->source_tag_id);
-    
-    // Store pinky loadpoint transforms
-    bool pinky_store_success = storePinkyLoadpointTransforms(goal->source_tag_id);
-    
-    if (tag_update_success) {
-        // Get the updated transform to log the new position
-        geometry_msgs::msg::TransformStamped updated_transform;
-        if (getStoredTagTransform(goal->source_tag_id, updated_transform)) {
-            RCLCPP_INFO(get_logger(), "Updated tag position: x=%.3f, y=%.3f, z=%.3f", 
-                       updated_transform.transform.translation.x,
-                       updated_transform.transform.translation.y,
-                       updated_transform.transform.translation.z);
+    for (int tag_id : target_tags) {
+        // Check if we have a stored transform for this tag
+        geometry_msgs::msg::TransformStamped tag_transform;
+        if (!getStoredTagTransform(tag_id, tag_transform)) {
+            RCLCPP_INFO(get_logger(), "No stored transform for tag ID %d, skipping...", tag_id);
+            continue;
         }
-    } else {
-        RCLCPP_WARN(get_logger(), "Could not update tag pose for tag ID %d", goal->source_tag_id);
-    }
-    
-    if (pinky_store_success) {
-        RCLCPP_INFO(get_logger(), "Successfully stored pinky loadpoint transforms");
-    } else {
-        RCLCPP_WARN(get_logger(), "Could not store all pinky loadpoint transforms");
-    }
-    
-    // Consider success if either tag or pinky transforms were stored
-    bool overall_success = tag_update_success || pinky_store_success;
-    
-    if (overall_success) {
-        // Publish ground-projected transforms for pinky frames
-        publishGroundProjectedTransforms(goal->source_tag_id);
         
-        // Create collision objects at pinky bag poses (only if tag is visible)
+        RCLCPP_INFO(get_logger(), "Processing pinky scan for tag ID: %d", tag_id);
+        
+        feedback->current_phase = "pinky_scanning";
+        feedback->current_tag_id = tag_id;
+        goal_handle->publish_feedback(feedback);
+        
+        // Move to the tag's position to get a more precise pose
+        feedback->current_phase = "approaching_target";
+        goal_handle->publish_feedback(feedback);
+        
+        if (!moveToReacquireTagPosition(tag_transform, tag_id)) {
+            RCLCPP_ERROR(get_logger(), "Failed to move to scan position for tag %d", tag_id);
+            continue; // Skip this tag and try next one
+        }
+        
+        // Wait a moment for the tag detection to stabilize
+        feedback->current_phase = "updating_poses";
+        goal_handle->publish_feedback(feedback);
+        
+        std::this_thread::sleep_for(std::chrono::milliseconds(TimingConstants::STABILIZE_DELAY_MS));
+        
+        // Try to update the stored tag pose with more precise data
+        bool tag_update_success = updateStoredTagIfVisible(tag_id);
+        
+        // Store pinky loadpoint transforms
+        bool pinky_store_success = storePinkyLoadpointTransforms(tag_id);
+        
         if (tag_update_success) {
-            createCollisionObjectsAtPinkyBagPoses(goal->source_tag_id);
+            // Get the updated transform to log the new position
+            geometry_msgs::msg::TransformStamped updated_transform;
+            if (getStoredTagTransform(tag_id, updated_transform)) {
+                RCLCPP_INFO(get_logger(), "Updated tag %d position: x=%.3f, y=%.3f, z=%.3f", 
+                           tag_id,
+                           updated_transform.transform.translation.x,
+                           updated_transform.transform.translation.y,
+                           updated_transform.transform.translation.z);
+            }
+        } else {
+            RCLCPP_WARN(get_logger(), "Could not update tag pose for tag ID %d", tag_id);
         }
         
-        RCLCPP_INFO(get_logger(), "SCAN_PINKY command completed successfully for tag ID %d", goal->source_tag_id);
+        if (pinky_store_success) {
+            RCLCPP_INFO(get_logger(), "Successfully stored pinky loadpoint transforms for tag %d", tag_id);
+        } else {
+            RCLCPP_WARN(get_logger(), "Could not store all pinky loadpoint transforms for tag %d", tag_id);
+        }
+        
+        // Consider success if either tag or pinky transforms were stored
+        bool tag_success = tag_update_success || pinky_store_success;
+        
+        if (tag_success) {
+            // Publish ground-projected transforms for pinky frames
+            publishGroundProjectedTransforms(tag_id);
+            
+            // Create collision objects at pinky bag poses (only if tag is visible)
+            if (tag_update_success) {
+                createCollisionObjectsAtPinkyBagPoses(tag_id);
+            }
+            
+            processed_tags.push_back(tag_id);
+            overall_success = true;
+            RCLCPP_INFO(get_logger(), "SCAN_PINKY completed successfully for tag ID %d", tag_id);
+        } else {
+            RCLCPP_ERROR(get_logger(), "SCAN_PINKY failed for tag ID %d", tag_id);
+        }
+    }
+    
+    // Summary of results
+    if (overall_success) {
+        RCLCPP_INFO(get_logger(), "SCAN_PINKY command completed. Processed %zu out of %zu target tags.", 
+                   processed_tags.size(), target_tags.size());
+        
+        if (!processed_tags.empty()) {
+            std::string processed_list = "Processed tags: ";
+            for (size_t i = 0; i < processed_tags.size(); ++i) {
+                processed_list += std::to_string(processed_tags[i]);
+                if (i < processed_tags.size() - 1) processed_list += ", ";
+            }
+            RCLCPP_INFO(get_logger(), "%s", processed_list.c_str());
+        }
     } else {
-        RCLCPP_ERROR(get_logger(), "SCAN_PINKY failed - could not update poses for tag ID %d", goal->source_tag_id);
+        RCLCPP_ERROR(get_logger(), "SCAN_PINKY failed - no tags could be processed. Make sure tags 31, 32, or 33 are scanned first.");
         return false;
     }
     
