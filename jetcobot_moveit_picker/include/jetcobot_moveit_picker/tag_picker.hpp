@@ -30,6 +30,7 @@
 #include <jetcobot_interfaces/action/picker_action.hpp>
 #include <moveit_msgs/msg/collision_object.hpp>
 #include <shape_msgs/msg/solid_primitive.hpp>
+#include <moveit_msgs/msg/robot_trajectory.hpp>
 
 class TagPicker : public rclcpp::Node
 {
@@ -272,6 +273,23 @@ private:
     // ROBOT MOVEMENT FUNCTIONS
     // ============================================================================
     
+    /**
+     * @brief Publish collision objects for detected tags
+     */
+    void PublishBoxCollisionObject();
+
+    /**
+     * @brief Attach a box collision object to the gripper
+     * @param tag_id Tag ID of the box to attach
+     */
+    void attachBoxToGripper(int tag_id);
+
+    /**
+     * @brief Detach a box collision object from the gripper
+     * @param tag_id Tag ID of the box to detach
+     */
+    void detachBoxFromGripper(int tag_id);
+
     /**
      * @brief Move robot to specified configuration
      * @param config_name Name of the configuration

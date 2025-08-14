@@ -246,7 +246,7 @@ bool TagPicker::collectDetectedTagsAndAcquireTransforms(double collection_time_s
     
     // Clear previous detections and start collection
     detected_tag_ids_.clear();
-    // stored_tag_transforms_.clear();
+    stored_tag_transforms_.clear();
     is_collecting_detections_ = true;
     detection_start_time_ = std::chrono::steady_clock::now();
     
@@ -315,6 +315,148 @@ bool TagPicker::collectDetectedTagsAndAcquireTransforms(double collection_time_s
     
     return transforms_acquired > 0;
 }
+
+void TagPicker::PublishBoxCollisionObject()
+{
+    // 1) 한꺼번에 보낼 CollisionObject들을 담을 벡터
+    std::vector<moveit_msgs::msg::CollisionObject> col_objs, to_remove_objs;
+
+    // 2) 이미 확보해 둔 태그-변환 맵을 순회 (1-30번 태그만 collision box 생성)
+    for (auto& [id, tf] : stored_tag_transforms_) {
+        // Skip tags outside the range 1-30 (pinky tags 31-33 don't need collision boxes)
+        if (id < 1 || id > 30) {
+            RCLCPP_DEBUG(get_logger(), "Skipping collision box for tag ID %d (outside range 1-30)", id);
+            continue;
+        }
+
+        moveit_msgs::msg::CollisionObject collision_object;
+        collision_object.header.frame_id = "base_link";                 // 좌표계 기준
+        collision_object.header.stamp = this->now();                     // 현재 시간
+        collision_object.id = "tag_box_" + std::to_string(id);          // 고유 ID
+
+        shape_msgs::msg::SolidPrimitive box;
+        box.type = box.BOX;                               // 박스 타입
+        box.dimensions = {0.03, 0.03, 0.03};              // x·y·z 크기[m], 태그보다 0.001m 큼
+        collision_object.primitives        = {box};
+
+        geometry_msgs::msg::Pose box_pose;
+        box_pose.position.x      = tf.transform.translation.x;
+        box_pose.position.y      = tf.transform.translation.y;
+        box_pose.position.z      = tf.transform.translation.z - box.dimensions[2]/2.0; // 태그가 박스 맨 위 중앙에 있다고 가정
+        box_pose.orientation     = tf.transform.rotation;     // 태그와 동일 방향
+
+        collision_object.primitive_poses   = {box_pose};
+
+        collision_object.operation         = collision_object.ADD;   // 처음엔 ADD.
+
+        col_objs.push_back(collision_object);               // 목록에 누적
+        RCLCPP_INFO(get_logger(), "Adding collision box for tag ID %d", id);
+    }
+
+    /* ---------- (C) 이전에 있던 태그 박스 제거 ---------- */
+    static std::set<int> prev_ids;
+    std::set<int> curr_ids;
+    // Only track tags in range 1-30 for collision objects
+    for (const auto& [id, _] : stored_tag_transforms_) {
+        if (id >= 1 && id <= 30) {
+            curr_ids.insert(id);
+        }
+    }
+
+    // Debug logging
+    RCLCPP_INFO(get_logger(), "Previous tag IDs (%zu): ", prev_ids.size());
+    for (int id : prev_ids) {
+        RCLCPP_INFO(get_logger(), "  - Previous ID: %d", id);
+    }
+    
+    RCLCPP_INFO(get_logger(), "Current tag IDs (%zu): ", curr_ids.size());
+    for (int id : curr_ids) {
+        RCLCPP_INFO(get_logger(), "  - Current ID: %d", id);
+    }
+
+    for (int old_id : prev_ids) {
+        if (!curr_ids.count(old_id)) {
+            moveit_msgs::msg::CollisionObject rm;
+            rm.header.frame_id = "base_link";
+            rm.id              = "tag_box_" + std::to_string(old_id);
+            rm.operation       = rm.REMOVE;
+            to_remove_objs.push_back(rm);
+            RCLCPP_INFO(get_logger(), "Removing collision box for tag ID %d", old_id);
+        }
+    }
+    prev_ids = std::move(curr_ids);
+
+    /* ---------- (C) PlanningScene 반영 ---------- */
+    if (!col_objs.empty()) {
+        RCLCPP_INFO(get_logger(), "Applying %zu collision objects to add", col_objs.size());
+        planning_scene_interface_->applyCollisionObjects(col_objs);
+    }
+    if (!to_remove_objs.empty()) {
+        RCLCPP_INFO(get_logger(), "Applying %zu collision objects to remove", to_remove_objs.size());
+        planning_scene_interface_->applyCollisionObjects(to_remove_objs);
+    }
+    
+    if (col_objs.empty() && to_remove_objs.empty()) {
+        RCLCPP_INFO(get_logger(), "No collision objects to add or remove");
+    }
+}
+
+void TagPicker::attachBoxToGripper(int tag_id)
+{
+    std::string object_id = "tag_box_" + std::to_string(tag_id);
+    
+    // Create the attached collision object with the SAME ID as the world object
+    // MoveIt will automatically convert from world to attached object
+    moveit_msgs::msg::AttachedCollisionObject attached_object;
+    attached_object.link_name = "TCP";  // Attach to TCP link
+    attached_object.object.header.frame_id = "TCP";
+    attached_object.object.id = object_id;  // Use same ID - MoveIt handles the conversion
+    
+    // Define the box shape
+    shape_msgs::msg::SolidPrimitive box;
+    box.type = box.BOX;
+    box.dimensions = {0.03, 0.03, 0.03};  // Same size as original collision box
+    attached_object.object.primitives = {box};
+    
+    // Position relative to TCP (box center at TCP position)
+    geometry_msgs::msg::Pose box_pose;
+    box_pose.position.x = 0.0;
+    box_pose.position.y = 0.0;
+    box_pose.position.z = 0.0;  // At TCP position
+    box_pose.orientation.x = 0.0;
+    box_pose.orientation.y = 0.0;
+    box_pose.orientation.z = 0.0;
+    box_pose.orientation.w = 1.0;
+    attached_object.object.primitive_poses = {box_pose};
+    
+    // Set operation to ADD
+    attached_object.object.operation = attached_object.object.ADD;
+    
+    // Define touch links (links that are allowed to touch this object)
+    attached_object.touch_links = {"TCP", "gripper_link"};  // Add actual gripper link names
+    
+    // Apply the attached object - MoveIt will automatically remove from world and attach
+    planning_scene_interface_->applyAttachedCollisionObject(attached_object);
+    
+    RCLCPP_INFO(get_logger(), "Attached box collision object %s to TCP (MoveIt auto-converted from world)", object_id.c_str());
+}
+
+void TagPicker::detachBoxFromGripper(int tag_id)
+{
+    // Remove the attached collision object using the same ID
+    std::string object_id = "tag_box_" + std::to_string(tag_id);
+    
+    moveit_msgs::msg::AttachedCollisionObject detach_object;
+    detach_object.link_name = "TCP";
+    detach_object.object.id = object_id;  // Use same ID as when attached
+    detach_object.object.operation = detach_object.object.REMOVE;
+    
+    // Apply the detachment
+    planning_scene_interface_->applyAttachedCollisionObject(detach_object);
+    
+    RCLCPP_INFO(get_logger(), "Detached box collision object %s from TCP", object_id.c_str());
+}
+
 
 std::set<int> TagPicker::getDetectedTagIds() const
 {
@@ -674,7 +816,7 @@ bool TagPicker::executePick(int tag_id)
     for (size_t i = 0; i < final_target_poses.size(); ++i) {
         RCLCPP_INFO(get_logger(), "Attempting final approach %zu/%zu (X-rotation: %d°)", 
                    i + 1, final_target_poses.size(), angles[i]);
-        final_target_poses[i].orientation = current_ee_orientation;  // Maintain current EEF orientation
+        // final_target_poses[i].orientation = current_ee_orientation;  // Maintain current EEF orientation
         // Move to final position using Cartesian path
         std::vector<geometry_msgs::msg::Pose> approach_waypoints{final_target_poses[i]};
         if (executeCartesianPath(approach_waypoints, "final approach to tag")) {
@@ -698,7 +840,14 @@ bool TagPicker::executePick(int tag_id)
     // Close gripper
     closeGripperToPicking();
 
-    // Lift object - use the successful pose for lifting
+    // Immediately attach the picked object to gripper (removes world collision object and attaches to robot)
+    RCLCPP_INFO(get_logger(), "Attaching picked object to gripper...");
+    attachBoxToGripper(tag_id);
+    
+    // Remove from stored transforms to prevent re-creation of world collision object
+    stored_tag_transforms_.erase(tag_id);
+
+    // Lift object with the attached collision object
     if (!executeLiftMovement(MovementConstants::LIFT_HEIGHT)) {
         return false;
     }
@@ -750,6 +899,10 @@ bool TagPicker::executePlace(int target_tag_id, int source_tag_id)
     // Open gripper to release object
     openGripperToHoldingPosition();
 
+    // Detach the object from gripper and place it as collision object at new location
+    RCLCPP_INFO(get_logger(), "Detaching object from gripper and placing at new location...");
+    detachBoxFromGripper(source_tag_id);
+
     // Move up to lift position
     if (!executeLiftMovement(MovementConstants::APPROACH_HEIGHT)) {
         return false;
@@ -758,6 +911,10 @@ bool TagPicker::executePlace(int target_tag_id, int source_tag_id)
     // Update stored tag pose after successful placement
     RCLCPP_INFO(get_logger(), "Updating stored pose for placed source tag ID %d (now at target position)...", source_tag_id);
     updateStoredTagIfVisible(source_tag_id);
+    
+    // Update collision objects after placing - update the placed object's collision box position
+    RCLCPP_INFO(get_logger(), "Updating collision objects after place operation...");
+    PublishBoxCollisionObject();
     
     RCLCPP_INFO(get_logger(), "Place operation completed: source tag %d placed at target tag %d position", source_tag_id, target_tag_id);
     std::this_thread::sleep_for(std::chrono::milliseconds(TimingConstants::OPERATION_DELAY_MS));
@@ -840,6 +997,10 @@ bool TagPicker::executePlace(const std::string& target_tf_name, int source_tag_i
     // Open gripper to release object
     openGripperToHoldingPosition();
     
+    // Detach the object from gripper and place it as collision object at new location
+    RCLCPP_INFO(get_logger(), "Detaching object from gripper and placing at new location...");
+    detachBoxFromGripper(source_tag_id);
+    
     // Move up to lift position after placing
     if (!executeLiftMovement(MovementConstants::APPROACH_HEIGHT)) {
         return false;
@@ -848,6 +1009,10 @@ bool TagPicker::executePlace(const std::string& target_tf_name, int source_tag_i
     // Update stored tag pose after successful placement
     RCLCPP_INFO(get_logger(), "Updating stored pose for placed source tag ID %d (now at TF frame position)...", source_tag_id);
     updateStoredTagIfVisible(source_tag_id);
+    
+    // Update collision objects after placing - update the placed object's collision box position
+    RCLCPP_INFO(get_logger(), "Updating collision objects after place operation...");
+    PublishBoxCollisionObject();
 
     RCLCPP_INFO(get_logger(), "Place operation completed: source tag %d placed at TF frame: %s", source_tag_id, target_tf_name.c_str());
     std::this_thread::sleep_for(std::chrono::milliseconds(TimingConstants::OPERATION_DELAY_MS));
@@ -886,10 +1051,13 @@ bool TagPicker::handleScanCommand(const std::shared_ptr<GoalHandlePickerAction> 
     
     bool success = collectDetectedTagsAndAcquireTransforms(TimingConstants::TAG_COLLECTION_TIME);
     
+    // Always update collision objects regardless of success/failure to remove old boxes
+    PublishBoxCollisionObject();        // Add collision boxes to planning scene
+    printDetectedTags();
+    
     if (!success) {
         RCLCPP_ERROR(get_logger(), "SCAN command failed - no tags detected");
     } else {
-        printDetectedTags();
         RCLCPP_INFO(get_logger(), "SCAN command completed successfully");
     }
     
@@ -916,11 +1084,13 @@ bool TagPicker::handleScanFrontCommand(const std::shared_ptr<GoalHandlePickerAct
     
     bool success = collectDetectedTagsAndAcquireTransforms(TimingConstants::TAG_COLLECTION_TIME);
     
+    // Always update collision objects regardless of success/failure to remove old boxes
+    PublishBoxCollisionObject();        // Add collision boxes to planning scene
+    printDetectedTags();
+    
     if (!success) {
         RCLCPP_ERROR(get_logger(), "SCAN_FRONT command failed - no tags detected");
     } else {
-        printDetectedTags();
-        
         // Publish ground-projected transforms for front tags
         // publishGroundProjectedTransforms(-1);  // -1 indicates SCAN_FRONT command
         
@@ -953,10 +1123,13 @@ bool TagPicker::handleScanLeftCommand(const std::shared_ptr<GoalHandlePickerActi
     
     bool success = collectDetectedTagsAndAcquireTransforms(TimingConstants::TAG_COLLECTION_TIME);
     
+    // Always update collision objects regardless of success/failure to remove old boxes
+    PublishBoxCollisionObject();        // Add collision boxes to planning scene
+    printDetectedTags();
+    
     if (!success) {
         RCLCPP_ERROR(get_logger(), "SCAN_LEFT command failed - no tags detected");
     } else {
-        printDetectedTags();
         RCLCPP_INFO(get_logger(), "SCAN_LEFT command completed successfully");
     }
     
@@ -983,10 +1156,13 @@ bool TagPicker::handleScanRightCommand(const std::shared_ptr<GoalHandlePickerAct
     
     bool success = collectDetectedTagsAndAcquireTransforms(TimingConstants::TAG_COLLECTION_TIME);
     
+    // Always update collision objects regardless of success/failure to remove old boxes
+    PublishBoxCollisionObject();        // Add collision boxes to planning scene
+    printDetectedTags();
+    
     if (!success) {
         RCLCPP_ERROR(get_logger(), "SCAN_RIGHT command failed - no tags detected");
     } else {
-        printDetectedTags();
         RCLCPP_INFO(get_logger(), "SCAN_RIGHT command completed successfully");
     }
     
