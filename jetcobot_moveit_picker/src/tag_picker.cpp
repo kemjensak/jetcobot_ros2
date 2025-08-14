@@ -1036,9 +1036,6 @@ bool TagPicker::handleScanPinkyCommand(const std::shared_ptr<GoalHandlePickerAct
         // Try to update the stored tag pose with more precise data
         bool tag_update_success = updateStoredTagIfVisible(tag_id);
         
-        // Store pinky loadpoint transforms
-        bool pinky_store_success = storePinkyLoadpointTransforms(tag_id);
-        
         if (tag_update_success) {
             // Get the updated transform to log the new position
             geometry_msgs::msg::TransformStamped updated_transform;
@@ -1053,6 +1050,14 @@ bool TagPicker::handleScanPinkyCommand(const std::shared_ptr<GoalHandlePickerAct
             RCLCPP_WARN(get_logger(), "Could not update tag pose for tag ID %d", tag_id);
         }
         
+        // Publish ground-projected transforms for pinky frames first
+        if (tag_update_success) {
+            publishGroundProjectedTransforms(tag_id);
+        }
+        
+        // Store pinky loadpoint transforms after ground-projected transforms
+        bool pinky_store_success = storePinkyLoadpointTransforms(tag_id);
+        
         if (pinky_store_success) {
             RCLCPP_INFO(get_logger(), "Successfully stored pinky loadpoint transforms for tag %d", tag_id);
         } else {
@@ -1063,9 +1068,6 @@ bool TagPicker::handleScanPinkyCommand(const std::shared_ptr<GoalHandlePickerAct
         bool tag_success = tag_update_success || pinky_store_success;
         
         if (tag_success) {
-            // Publish ground-projected transforms for pinky frames
-            publishGroundProjectedTransforms(tag_id);
-            
             // Create collision objects at pinky bag poses (only if tag is visible)
             if (tag_update_success) {
                 createCollisionObjectsAtPinkyBagPoses(tag_id);
