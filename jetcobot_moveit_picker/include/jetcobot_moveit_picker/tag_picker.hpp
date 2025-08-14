@@ -53,7 +53,7 @@ private:
     // CONSTANTS
     // ============================================================================
     struct MovementConstants {
-        static constexpr double APPROACH_HEIGHT = 0.07;    // 7cm above tag
+        static constexpr double APPROACH_HEIGHT = 0.05;    // 5cm above tag
         static constexpr double CAM_HEIGHT = 0.09;         // 9cm above TCP
         static constexpr double PICK_HEIGHT = -0.01;       // 1cm below tag surface
         static constexpr double LIFT_HEIGHT = 0.04;        // 3cm lift

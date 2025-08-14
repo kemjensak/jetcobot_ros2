@@ -1111,9 +1111,9 @@ bool TagPicker::handleClearPinkyCommand(const std::shared_ptr<GoalHandlePickerAc
     
     // Clear all pinky-related static transforms
     std::vector<std::string> pinky_frames_to_clear = {
-        "pinky1/pinky_bag",
-        "pinky2/pinky_bag", 
-        "pinky3/pinky_bag",
+        "pinky1/pinky_bag_projected",
+        "pinky2/pinky_bag_projected", 
+        "pinky3/pinky_bag_projected",
         "pinky1/front_frame",
         "pinky2/front_frame",
         "pinky3/front_frame",
@@ -1132,7 +1132,7 @@ bool TagPicker::handleClearPinkyCommand(const std::shared_ptr<GoalHandlePickerAc
             remove_transform.child_frame_id = frame_name;
             
             // Set identity transform
-            remove_transform.transform.translation.x = 0.0;
+            remove_transform.transform.translation.x = 100.0;
             remove_transform.transform.translation.y = 0.0;
             remove_transform.transform.translation.z = 0.0;
             remove_transform.transform.rotation.x = 0.0;
@@ -1154,7 +1154,13 @@ bool TagPicker::handleClearPinkyCommand(const std::shared_ptr<GoalHandlePickerAc
     std::vector<std::string> collision_ids_to_remove = {
         "pinky1_bag_collision",
         "pinky2_bag_collision", 
-        "pinky3_bag_collision"
+        "pinky3_bag_collision",
+        "pinky1_base_collision",
+        "pinky2_base_collision",
+        "pinky3_base_collision",
+        "pinky1_lidar_collision",
+        "pinky2_lidar_collision",
+        "pinky3_lidar_collision"
     };
     
     planning_scene_interface_->removeCollisionObjects(collision_ids_to_remove);
@@ -1227,8 +1233,8 @@ geometry_msgs::msg::TransformStamped TagPicker::createGroundProjectedTransform(
     
     // Convert quaternion to euler angles
     auto euler = eulerFromQuaternion(rotation.x, rotation.y, rotation.z, rotation.w);
-    double roll = euler[0];
-    double pitch = euler[1]; 
+    // double roll = euler[0];
+    // double pitch = euler[1]; 
     double yaw = euler[2];
     
     // Create new quaternion with only yaw rotation (roll=0, pitch=0)
@@ -1260,11 +1266,11 @@ void TagPicker::publishGroundProjectedTransforms(int source_tag_id)
     std::vector<std::pair<std::string, std::string>> frame_mappings; // source frame, target frame
     
     if (source_tag_id == -1) {
-        // SCAN_FRONT command - project tags 31, 32, 33 to pinky pinky_bag frames
+        // SCAN_FRONT command - project tags 31, 32, 33 to pinky pinky_bag_projected frames
         frame_mappings = {
-            {"tagStandard41h12:31", "pinky1/pinky_bag"},
-            {"tagStandard41h12:32", "pinky2/pinky_bag"},
-            {"tagStandard41h12:33", "pinky3/pinky_bag"}
+            {"tagStandard41h12:31", "pinky1/pinky_bag_projected"},
+            {"tagStandard41h12:32", "pinky2/pinky_bag_projected"},
+            {"tagStandard41h12:33", "pinky3/pinky_bag_projected"}
         };
     } else if (source_tag_id == 31 || source_tag_id == 32 || source_tag_id == 33) {
         // SCAN_PINKY command - project tag frames to pinky_bag frames
@@ -1273,7 +1279,7 @@ void TagPicker::publishGroundProjectedTransforms(int source_tag_id)
                                     (source_tag_id == 32) ? "pinky2" : "pinky3";
         
         frame_mappings = {
-            {tag_frame, pinky_namespace + "/pinky_bag"}
+            {tag_frame, pinky_namespace + "/pinky_bag_projected"}
         };
     } else {
         RCLCPP_WARN(get_logger(), "No ground projection defined for tag ID %d", source_tag_id);
@@ -1316,8 +1322,8 @@ void TagPicker::removeStaticTransformsForMissingTags(int source_tag_id)
     if (source_tag_id == -1) {
         // SCAN_FRONT command - check which tags 31, 32, 33 are missing
         std::vector<int> expected_tags = {31, 32, 33};
-        std::vector<std::string> pinky_frames = {"pinky1/pinky_bag", "pinky2/pinky_bag", "pinky3/pinky_bag"};
-        
+        std::vector<std::string> pinky_frames = {"pinky1/pinky_bag_projected", "pinky2/pinky_bag_projected", "pinky3/pinky_bag_projected"};
+
         for (size_t i = 0; i < expected_tags.size(); i++) {
             int tag_id = expected_tags[i];
             const std::string& frame_name = pinky_frames[i];
@@ -1376,15 +1382,22 @@ void TagPicker::removeStaticTransformsForMissingTags(int source_tag_id)
 
 void TagPicker::createCollisionObjectsAtPinkyBagPoses(int source_tag_id)
 {
+    // Define a structure to hold the three frame names
+    struct PinkyFrameMapping {
+        std::string bag_frame;
+        std::string collision_id;
+        std::string base_frame;
+    };
+    
     // Define the frames to create collisions based on command type
-    std::vector<std::pair<std::string, std::string>> collision_mappings; // frame to look up, collision object ID
+    std::vector<PinkyFrameMapping> collision_mappings;
     
     if (source_tag_id == -1) {
         // SCAN_FRONT command - create collisions for pinky1/2/3 pinky_bag frames
         collision_mappings = {
-            {"pinky1/pinky_bag", "pinky1_bag_collision"},
-            {"pinky2/pinky_bag", "pinky2_bag_collision"},
-            {"pinky3/pinky_bag", "pinky3_bag_collision"}
+            {"pinky1/pinky_bag_projected", "pinky1_bag_collision", "pinky1/base_link"},
+            {"pinky2/pinky_bag_projected", "pinky2_bag_collision", "pinky2/base_link"},
+            {"pinky3/pinky_bag_projected", "pinky3_bag_collision", "pinky3/base_link"}
         };
     } else if (source_tag_id == 31 || source_tag_id == 32 || source_tag_id == 33) {
         // SCAN_PINKY command - create collision for specific pinky bag
@@ -1392,7 +1405,7 @@ void TagPicker::createCollisionObjectsAtPinkyBagPoses(int source_tag_id)
                                     (source_tag_id == 32) ? "pinky2" : "pinky3";
         
         collision_mappings = {
-            {pinky_namespace + "/pinky_bag", pinky_namespace + "_bag_collision"}
+            {pinky_namespace + "/pinky_bag_projected", pinky_namespace + "_bag_collision", pinky_namespace + "/base_link"}
         };
     } else {
         RCLCPP_WARN(get_logger(), "No collision objects defined for tag ID %d", source_tag_id);
@@ -1403,9 +1416,10 @@ void TagPicker::createCollisionObjectsAtPinkyBagPoses(int source_tag_id)
     std::vector<moveit_msgs::msg::CollisionObject> collision_objects;
     
     for (const auto& mapping : collision_mappings) {
-        const std::string& frame_name = mapping.first;
-        const std::string& collision_id = mapping.second;
-        
+        const std::string& frame_name = mapping.bag_frame;
+        const std::string& collision_id = mapping.collision_id;
+        const std::string& base_frame_name = mapping.base_frame;
+
         try {
             // Get the current transform for the pinky bag frame
             geometry_msgs::msg::TransformStamped transform = 
@@ -1415,18 +1429,46 @@ void TagPicker::createCollisionObjectsAtPinkyBagPoses(int source_tag_id)
             geometry_msgs::msg::Pose pose;
             pose.position.x = transform.transform.translation.x;
             pose.position.y = transform.transform.translation.y;
-            pose.position.z = transform.transform.translation.z;
+            pose.position.z = transform.transform.translation.z - 0.003;
             pose.orientation = transform.transform.rotation;
             
             // Create box collision object (representing pinky bag dimensions)
             // Typical pinky bag dimensions: 0.2m x 0.15m x 0.1m (length x width x height)
-            std::vector<double> dimensions = {0.075, 0.115, 0.001};
+            std::vector<double> dimensions = {0.075, 0.115, 0.0025};
             auto collision_object = createBoxCollisionObject(collision_id, pose, dimensions);
             
             collision_objects.push_back(collision_object);
+
+            geometry_msgs::msg::TransformStamped transform_base = 
+                tf_buffer_->lookupTransform("base_link", base_frame_name, tf2::TimePointZero, tf2::durationFromSec(1.0));
+            // Create base collision object at offset (0.108, 0.000, -0.018)
+            geometry_msgs::msg::Pose base_pose;
+            base_pose.position.x = transform_base.transform.translation.x - 0.005;
+            base_pose.position.y = transform_base.transform.translation.y;
+            base_pose.position.z = transform_base.transform.translation.z + 0.105/2 - 0.03;
+            base_pose.orientation = transform_base.transform.rotation;
+
+            std::string base_collision_id = collision_id + "_base_collision";
+            std::vector<double> base_dimensions = {0.125, 0.12, 0.105};
+            auto base_collision_object = createBoxCollisionObject(base_collision_id, base_pose, base_dimensions);
             
-            RCLCPP_INFO(get_logger(), "Created collision object: %s at frame %s", 
-                       collision_id.c_str(), frame_name.c_str());
+            collision_objects.push_back(base_collision_object);
+            
+            geometry_msgs::msg::Pose lidar_pose;
+            lidar_pose.position.x = transform_base.transform.translation.x;
+            lidar_pose.position.y = transform_base.transform.translation.y;
+            lidar_pose.position.z = base_pose.position.z + 0.105/2 + 0.04/2;
+            lidar_pose.orientation = transform_base.transform.rotation;
+
+            std::string lidar_collision_id = collision_id + "_lidar_collision";
+            std::vector<double> lidar_dimensions = {0.05, 0.05, 0.04};
+            auto lidar_collision_object = createBoxCollisionObject(lidar_collision_id, lidar_pose, lidar_dimensions);
+
+            collision_objects.push_back(lidar_collision_object);
+
+
+            RCLCPP_INFO(get_logger(), "Created collision objects: %s and %s at frame %s", 
+                       collision_id.c_str(), base_collision_id.c_str(), frame_name.c_str());
             
         } catch (const tf2::TransformException& ex) {
             RCLCPP_WARN(get_logger(), "Could not get transform for %s to create collision: %s", 
@@ -1482,10 +1524,11 @@ void TagPicker::removeCollisionObjectsForMissingTags(int source_tag_id)
             
             // Check if this tag was detected
             if (detected_tag_ids_.find(tag_id) == detected_tag_ids_.end()) {
-                // Tag not detected, mark collision object for removal
+                // Tag not detected, mark collision objects for removal
                 collision_ids_to_remove.push_back(pinky_namespace + "_bag_collision");
-                RCLCPP_INFO(get_logger(), "Tag %d not detected, will remove collision object: %s_bag_collision", 
-                           tag_id, pinky_namespace.c_str());
+                collision_ids_to_remove.push_back(pinky_namespace + "_base_collision");
+                RCLCPP_INFO(get_logger(), "Tag %d not detected, will remove collision objects: %s_bag_collision and %s_base_collision", 
+                           tag_id, pinky_namespace.c_str(), pinky_namespace.c_str());
             }
         }
     } else if (source_tag_id == 31 || source_tag_id == 32 || source_tag_id == 33) {
@@ -1493,8 +1536,9 @@ void TagPicker::removeCollisionObjectsForMissingTags(int source_tag_id)
         std::string pinky_namespace = (source_tag_id == 31) ? "pinky1" : 
                                     (source_tag_id == 32) ? "pinky2" : "pinky3";
         collision_ids_to_remove.push_back(pinky_namespace + "_bag_collision");
-        RCLCPP_INFO(get_logger(), "Tag %d not visible after approach, removing collision object: %s_bag_collision", 
-                   source_tag_id, pinky_namespace.c_str());
+        collision_ids_to_remove.push_back(pinky_namespace + "_base_collision");
+        RCLCPP_INFO(get_logger(), "Tag %d not visible after approach, removing collision objects: %s_bag_collision and %s_base_collision", 
+                   source_tag_id, pinky_namespace.c_str(), pinky_namespace.c_str());
     }
     
     // Remove collision objects from planning scene
