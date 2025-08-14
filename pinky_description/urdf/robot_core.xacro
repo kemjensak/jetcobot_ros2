@@ -84,7 +84,7 @@
         </xacro:inertial_sphere>
     </link>
 
-    <joint name="left_wheel_joint" type="continuous">
+    <joint name="left_wheel_joint" type="fixed">
         <parent link="${ns_prefix}base_link"/>
         <child link="${ns_prefix}left_wheel"/>
         <origin xyz="0 ${wheel_separation/2} 0" rpy="-${pi/2} 0 0"/>
@@ -109,7 +109,7 @@
         </xacro:inertial_cylinder>
     </link>
 
-    <joint name="right_wheel_joint" type="continuous">
+    <joint name="right_wheel_joint" type="fixed">
         <parent link="${ns_prefix}base_link"/>
         <child link="${ns_prefix}right_wheel"/>
         <origin xyz="0 ${-1 * wheel_separation/2} 0" rpy="${pi/2} 0 0"/>

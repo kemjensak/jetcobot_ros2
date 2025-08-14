@@ -11,8 +11,8 @@ from launch_ros.parameter_descriptions import ParameterValue
 
 def generate_launch_description():
     # Position constants for loadpoints relative to pinky_bag (in meters)
-    LOADPOINT_X_OFFSET = 0.01925  # 19.25mm
-    LOADPOINT_Y_OFFSET = 0.04     # 40mm
+    LOADPOINT_X_OFFSET = 0.01825  # 18.25mm
+    LOADPOINT_Y_OFFSET = 0.039     # 39mm
     LOADPOINT_Z_OFFSET = 0.0      # 0mm
     
     # Declare launch arguments
@@ -27,7 +27,7 @@ def generate_launch_description():
     
     # Create frame names with namespace prefix
     pinky_bag_frame = PythonExpression([
-        "'", namespace, "/pinky_bag' if '", namespace, "' != '' else 'pinky_bag'"
+        "'", namespace, "/pinky_bag_projected' if '", namespace, "' != '' else 'pinky_bag'"
     ])
     
     fl_loadpoint_frame = PythonExpression([
@@ -44,6 +44,10 @@ def generate_launch_description():
     
     rl_loadpoint_frame = PythonExpression([
         "'", namespace, "/rl_loadpoint' if '", namespace, "' != '' else 'rl_loadpoint'"
+    ])
+
+    base_link_frame = PythonExpression([
+        "'", namespace, "/base_link' if '", namespace, "' != '' else 'base_link'"
     ])
     
     # Get package share directory
@@ -83,6 +87,7 @@ def generate_launch_description():
         package='tf2_ros',
         executable='static_transform_publisher',
         name='fl_loadpoint_tf_publisher',
+        namespace=namespace,
         arguments=[str(LOADPOINT_X_OFFSET), str(LOADPOINT_Y_OFFSET), str(LOADPOINT_Z_OFFSET), 
                   '0', '0', '0', pinky_bag_frame, fl_loadpoint_frame]
     )
@@ -92,6 +97,7 @@ def generate_launch_description():
         package='tf2_ros',
         executable='static_transform_publisher',
         name='fr_loadpoint_tf_publisher',
+        namespace=namespace,
         arguments=[str(LOADPOINT_X_OFFSET), str(-LOADPOINT_Y_OFFSET), str(LOADPOINT_Z_OFFSET), 
                   '0', '0', '0', pinky_bag_frame, fr_loadpoint_frame]
     )
@@ -101,6 +107,7 @@ def generate_launch_description():
         package='tf2_ros',
         executable='static_transform_publisher',
         name='rr_loadpoint_tf_publisher',
+        namespace=namespace,
         arguments=[str(-LOADPOINT_X_OFFSET), str(-LOADPOINT_Y_OFFSET), str(LOADPOINT_Z_OFFSET), 
                   '0', '0', '0', pinky_bag_frame, rr_loadpoint_frame]
     )
@@ -110,16 +117,27 @@ def generate_launch_description():
         package='tf2_ros',
         executable='static_transform_publisher',
         name='rl_loadpoint_tf_publisher',
+        namespace=namespace,
         arguments=[str(-LOADPOINT_X_OFFSET), str(LOADPOINT_Y_OFFSET), str(LOADPOINT_Z_OFFSET), 
                   '0', '0', '0', pinky_bag_frame, rl_loadpoint_frame]
+    )
+
+    pinky_base_tf = Node(
+        package='tf2_ros',
+        executable='static_transform_publisher',
+        name='pinky_base_tf_publisher',
+        namespace=namespace,
+        arguments=['0.108', '0.000', '-0.018',
+                  '0', '0', '0', pinky_bag_frame, base_link_frame]
     )
     
     return LaunchDescription([
         namespace_arg,
-        robot_state_publisher_node,
+        # robot_state_publisher_node,
         # joint_state_publisher_gui_node,
         fl_loadpoint_tf,
         fr_loadpoint_tf,
         rr_loadpoint_tf,
         rl_loadpoint_tf,
+        pinky_base_tf,
     ])
