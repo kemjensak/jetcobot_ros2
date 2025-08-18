@@ -41,7 +41,7 @@ bool TagPicker::execute()
     move_group_interface_->setMaxVelocityScalingFactor(1.0);
     move_group_interface_->setPlanningTime(10.0);  // Set planning time to 15 seconds
     move_group_interface_->setNumPlanningAttempts(200);
-    move_group_interface_->setWorkspace(-0.33, -0.4, -0.01, 0.5, 0.29, 1.0);
+    move_group_interface_->setWorkspace(-0.33, -0.4, -0.1, 0.5, 0.29, 1.0);
 
     openGripperToHoldingPosition();
     // controlGripper(100);  // Open gripper fully to start fresh
@@ -189,10 +189,10 @@ bool TagPicker::storePinkyLoadpointTransforms(int tag_id)
     
     // List of pinky loadpoint TF frames to store
     std::vector<std::string> pinky_frames = {
-        pinky_namespace + "/fl_loadpoint",
-        pinky_namespace + "/fr_loadpoint", 
-        pinky_namespace + "/rl_loadpoint",
-        pinky_namespace + "/rr_loadpoint"
+        pinky_namespace + "/fl",
+        pinky_namespace + "/fr", 
+        pinky_namespace + "/rl",
+        pinky_namespace + "/rr"
     };
     
     int successful_stores = 0;
@@ -246,7 +246,7 @@ bool TagPicker::collectDetectedTagsAndAcquireTransforms(double collection_time_s
     
     // Clear previous detections and start collection
     detected_tag_ids_.clear();
-    stored_tag_transforms_.clear();
+    // stored_tag_transforms_.clear();
     is_collecting_detections_ = true;
     detection_start_time_ = std::chrono::steady_clock::now();
     
@@ -825,7 +825,7 @@ bool TagPicker::executePick(int tag_id)
     for (size_t i = 0; i < final_target_poses.size(); ++i) {
         RCLCPP_INFO(get_logger(), "Attempting final approach %zu/%zu (X-rotation: %d°)", 
                    i + 1, final_target_poses.size(), angles[i]);
-        // final_target_poses[i].orientation = current_ee_orientation;  // Maintain current EEF orientation
+        final_target_poses[i].orientation = current_ee_orientation;  // Maintain current EEF orientation
         // Move to final position using Cartesian path
         std::vector<geometry_msgs::msg::Pose> approach_waypoints{final_target_poses[i]};
         if (executeCartesianPath(approach_waypoints, "final approach to tag")) {
