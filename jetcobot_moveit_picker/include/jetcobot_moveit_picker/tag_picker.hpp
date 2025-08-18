@@ -82,8 +82,8 @@ private:
     
     struct RotationAngles {
         // X-axis rotation angles for multiple approach attempts (in degrees)
-        static constexpr int APPROACH_ANGLE_COUNT = 5;
-        static inline const std::vector<int> APPROACH_ANGLES = {0, -10, -20, -30, -40};
+        static constexpr int APPROACH_ANGLE_COUNT = 6;
+        static inline const std::vector<int> APPROACH_ANGLES = {0, 10, 20, 30, 40, -10};
     };
 
     // ============================================================================
@@ -301,9 +301,10 @@ private:
      * @brief Move to position to reacquire tag
      * @param tag_transform Tag transform
      * @param tag_id Tag ID (optional, for pose update)
+     * @param angle_index Index of angle from RotationAngles::APPROACH_ANGLES to use (default: 0 for 0 degrees)
      * @return true if successful, false otherwise
      */
-    bool moveToReacquireTagPosition(const geometry_msgs::msg::TransformStamped& tag_transform, int tag_id = -1);
+    bool moveToReacquireTagPosition(const geometry_msgs::msg::TransformStamped& tag_transform, int tag_id = -1, int angle_index = 0);
 
     /**
      * @brief Execute Cartesian path with given waypoints

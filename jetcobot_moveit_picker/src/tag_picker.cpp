@@ -667,13 +667,22 @@ bool TagPicker::updateStoredTagIfVisible(int tag_id)
     }
 }
 
-bool TagPicker::moveToReacquireTagPosition(const geometry_msgs::msg::TransformStamped& tag_transform, int tag_id)
+bool TagPicker::moveToReacquireTagPosition(const geometry_msgs::msg::TransformStamped& tag_transform, int tag_id, int angle_index)
 {
-    // Use look-at pose for approach position to orient TCP toward tag center
-    auto tag_pose = calculateBaseAlignedPose(tag_transform, MovementConstants::CAM_HEIGHT + MovementConstants::APPROACH_HEIGHT);
-
-    RCLCPP_INFO(get_logger(), "Moving to tag position (%.1fcm above) with look-at orientation: x=%.3f, y=%.3f, z=%.3f",
-               MovementConstants::CAM_HEIGHT * 100, tag_pose.position.x,
+    // Use calculateBaseAlignedPoses to get different angle options
+    auto tag_poses = calculateBaseAlignedPoses(tag_transform, MovementConstants::CAM_HEIGHT + MovementConstants::APPROACH_HEIGHT);
+    
+    // Validate angle_index
+    const auto& angles = RotationAngles::APPROACH_ANGLES;
+    if (angle_index < 0 || angle_index >= static_cast<int>(tag_poses.size()) || angle_index >= static_cast<int>(angles.size())) {
+        RCLCPP_WARN(get_logger(), "Invalid angle_index %d, using default angle 0°", angle_index);
+        angle_index = 0;
+    }
+    
+    auto tag_pose = tag_poses[angle_index];
+    
+    RCLCPP_INFO(get_logger(), "Moving to tag position (%.1fcm above) with %d° X-rotation: x=%.3f, y=%.3f, z=%.3f",
+               MovementConstants::CAM_HEIGHT * 100, angles[angle_index], tag_pose.position.x,
                tag_pose.position.y, tag_pose.position.z);
                
     move_group_interface_->clearPoseTargets();
@@ -869,8 +878,8 @@ bool TagPicker::executePlace(int target_tag_id, int source_tag_id)
         return false;
     }
 
-    // Move to target tag position first
-    if (!moveToReacquireTagPosition(target_tag_transform, target_tag_id)) {
+    // Move to target tag position first with -10° approach angle
+    if (!moveToReacquireTagPosition(target_tag_transform, target_tag_id, 5)) {  // Index 5 = -10°
         RCLCPP_ERROR(get_logger(), "Failed to move to target tag position for tag %d", target_tag_id);
         return false;
     }
