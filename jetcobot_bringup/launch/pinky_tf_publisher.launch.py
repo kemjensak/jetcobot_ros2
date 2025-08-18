@@ -11,7 +11,7 @@ from launch_ros.parameter_descriptions import ParameterValue
 
 def generate_launch_description():
     # Position constants for loadpoints relative to pinky_bag (in meters)
-    LOADPOINT_X_OFFSET = 0.01825  # 18.25mm
+    LOADPOINT_X_OFFSET = 0.01835  # 18.25mm
     LOADPOINT_Y_OFFSET = 0.039     # 39mm
     LOADPOINT_Z_OFFSET = 0.0      # 0mm
     
@@ -27,23 +27,23 @@ def generate_launch_description():
     
     # Create frame names with namespace prefix
     pinky_bag_frame = PythonExpression([
-        "'", namespace, "/pinky_bag_projected' if '", namespace, "' != '' else 'pinky_bag'"
+        "'", namespace, "/pinky_bag_projected' if '", namespace, "' != '' else 'pinky_bag_projected'"
     ])
     
     fl_loadpoint_frame = PythonExpression([
-        "'", namespace, "/fl_loadpoint' if '", namespace, "' != '' else 'fl_loadpoint'"
+        "'", namespace, "/fl' if '", namespace, "' != '' else 'fl_loadpoint'"
     ])
     
     fr_loadpoint_frame = PythonExpression([
-        "'", namespace, "/fr_loadpoint' if '", namespace, "' != '' else 'fr_loadpoint'"
+        "'", namespace, "/fr' if '", namespace, "' != '' else 'fr_loadpoint'"
     ])
     
     rr_loadpoint_frame = PythonExpression([
-        "'", namespace, "/rr_loadpoint' if '", namespace, "' != '' else 'rr_loadpoint'"
+        "'", namespace, "/rr' if '", namespace, "' != '' else 'rr_loadpoint'"
     ])
     
     rl_loadpoint_frame = PythonExpression([
-        "'", namespace, "/rl_loadpoint' if '", namespace, "' != '' else 'rl_loadpoint'"
+        "'", namespace, "/rl' if '", namespace, "' != '' else 'rl_loadpoint'"
     ])
 
     base_link_frame = PythonExpression([
@@ -133,7 +133,7 @@ def generate_launch_description():
     
     return LaunchDescription([
         namespace_arg,
-        # robot_state_publisher_node,
+        robot_state_publisher_node,
         # joint_state_publisher_gui_node,
         fl_loadpoint_tf,
         fr_loadpoint_tf,
