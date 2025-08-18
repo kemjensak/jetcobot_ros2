@@ -25,7 +25,7 @@ def generate_launch_description():
         package='tf2_ros',
         executable='static_transform_publisher',
         name='ground_left_loadpoint_tf_publisher',
-        arguments=['0','0.155','0', '0', '0', '0', 'base_link', 'ground_left']
+        arguments=['0','0.205','0', '0', '0', '0', 'base_link', 'ground_left']
     )
 
     # Left side loadpoints (4 total: rr, rl, fl, fr)
