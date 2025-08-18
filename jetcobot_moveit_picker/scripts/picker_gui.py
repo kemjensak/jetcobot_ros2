@@ -367,10 +367,10 @@ class PickerGUI(QMainWindow):
                 return
         
         # Validate SCAN_PINKY requirements
-        if command == "SCAN_PINKY":
-            if source_tag_id == -1:
-                QMessageBox.warning(self, "Missing Input", "Source Tag ID is required for SCAN_PINKY!")
-                return
+        # if command == "SCAN_PINKY":
+        #     if source_tag_id == -1:
+        #         QMessageBox.warning(self, "Missing Input", "Source Tag ID is required for SCAN_PINKY!")
+        #         return
         
         # Send goal
         if self.action_client.send_goal(command, source_tag_id, target_tag_id, target_tf_name):
