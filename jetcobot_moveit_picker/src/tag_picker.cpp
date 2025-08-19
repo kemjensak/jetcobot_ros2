@@ -1646,9 +1646,12 @@ void TagPicker::createCollisionObjectsAtPinkyBagPoses(int source_tag_id)
             geometry_msgs::msg::TransformStamped transform = 
                 tf_buffer_->lookupTransform("base_link", frame_name, tf2::TimePointZero, tf2::durationFromSec(1.0));
             
-            // Create ground-projected pose (parallel to ground plane) for the bag collision
-            geometry_msgs::msg::Pose pose = createGroundProjectedPose(transform);
-            pose.position.z = transform.transform.translation.z - 0.003; // Adjust Z position
+            // Convert transform to pose
+            geometry_msgs::msg::Pose pose;
+            pose.position.x = transform.transform.translation.x;
+            pose.position.y = transform.transform.translation.y;
+            pose.position.z = transform.transform.translation.z - 0.003;
+            pose.orientation = transform.transform.rotation;
             
             // Create box collision object (representing pinky bag dimensions)
             // Typical pinky bag dimensions: 0.2m x 0.15m x 0.1m (length x width x height)
@@ -1659,12 +1662,12 @@ void TagPicker::createCollisionObjectsAtPinkyBagPoses(int source_tag_id)
 
             geometry_msgs::msg::TransformStamped transform_base = 
                 tf_buffer_->lookupTransform("base_link", base_frame_name, tf2::TimePointZero, tf2::durationFromSec(1.0));
-            
-            // Create ground-projected pose for the base collision
-            geometry_msgs::msg::Pose base_pose = createGroundProjectedPose(transform_base);
+            // Create base collision object at offset (0.108, 0.000, -0.018)
+            geometry_msgs::msg::Pose base_pose;
             base_pose.position.x = transform_base.transform.translation.x - 0.005;
             base_pose.position.y = transform_base.transform.translation.y;
             base_pose.position.z = transform_base.transform.translation.z + 0.105/2 - 0.03;
+            base_pose.orientation = transform_base.transform.rotation;
 
             std::string base_collision_id = collision_id + "_base_collision";
             std::vector<double> base_dimensions = {0.125, 0.12, 0.105};
@@ -1672,11 +1675,11 @@ void TagPicker::createCollisionObjectsAtPinkyBagPoses(int source_tag_id)
             
             collision_objects.push_back(base_collision_object);
             
-            // Create ground-projected pose for the lidar collision
-            geometry_msgs::msg::Pose lidar_pose = createGroundProjectedPose(transform_base);
+            geometry_msgs::msg::Pose lidar_pose;
             lidar_pose.position.x = transform_base.transform.translation.x;
             lidar_pose.position.y = transform_base.transform.translation.y;
             lidar_pose.position.z = base_pose.position.z + 0.105/2 + 0.04/2;
+            lidar_pose.orientation = transform_base.transform.rotation;
 
             std::string lidar_collision_id = collision_id + "_lidar_collision";
             std::vector<double> lidar_dimensions = {0.05, 0.05, 0.04};
