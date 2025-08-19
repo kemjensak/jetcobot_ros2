@@ -41,7 +41,7 @@ bool TagPicker::execute()
     move_group_interface_->setMaxVelocityScalingFactor(1.0);
     move_group_interface_->setPlanningTime(10.0);  // Set planning time to 15 seconds
     move_group_interface_->setNumPlanningAttempts(200);
-    move_group_interface_->setWorkspace(-0.33, -0.4, -0.1, 0.5, 0.29, 1.0);
+    // move_group_interface_->setWorkspace(-0.33, -0.4, -0.1, 0.5, 0.29, 1.0);
 
     openGripperToHoldingPosition();
     // controlGripper(100);  // Open gripper fully to start fresh
@@ -879,7 +879,7 @@ bool TagPicker::executePlace(int target_tag_id, int source_tag_id)
     }
 
     // Move to target tag position first with -10° approach angle
-    if (!moveToReacquireTagPosition(target_tag_transform, target_tag_id, 5)) {  // Index 5 = -10°
+    if (!moveToReacquireTagPosition(target_tag_transform, target_tag_id, -1)) {  // Index 5 = -10°
         RCLCPP_ERROR(get_logger(), "Failed to move to target tag position for tag %d", target_tag_id);
         return false;
     }
@@ -1447,6 +1447,32 @@ geometry_msgs::msg::TransformStamped TagPicker::createGroundProjectedTransform(
     return ground_transform;
 }
 
+geometry_msgs::msg::Pose TagPicker::createGroundProjectedPose(const geometry_msgs::msg::TransformStamped& transform)
+{
+    // Extract original position and orientation
+    const auto& translation = transform.transform.translation;
+    const auto& rotation = transform.transform.rotation;
+    
+    // Convert quaternion to euler angles
+    auto euler = eulerFromQuaternion(rotation.x, rotation.y, rotation.z, rotation.w);
+    double yaw = euler[2];
+    
+    // Create new quaternion with only yaw rotation (roll=0, pitch=0) - parallel to ground
+    auto new_quat = quaternionFromEuler(0.0, 0.0, yaw);
+    
+    // Create pose with ground-projected orientation
+    geometry_msgs::msg::Pose pose;
+    pose.position.x = translation.x;
+    pose.position.y = translation.y;
+    pose.position.z = translation.z;
+    pose.orientation.x = new_quat[0];
+    pose.orientation.y = new_quat[1];
+    pose.orientation.z = new_quat[2];
+    pose.orientation.w = new_quat[3];
+    
+    return pose;
+}
+
 void TagPicker::publishGroundProjectedTransforms(int source_tag_id)
 {
     // Define the frames to project based on command type
@@ -1481,7 +1507,7 @@ void TagPicker::publishGroundProjectedTransforms(int source_tag_id)
         try {
             // Get the current transform
             geometry_msgs::msg::TransformStamped transform = 
-                tf_buffer_->lookupTransform("base_link", source_frame, tf2::TimePointZero, tf2::durationFromSec(1.0));
+                tf_buffer_->lookupTransform("world", source_frame, tf2::TimePointZero, tf2::durationFromSec(1.0));
             
             // Create ground-projected version
             auto ground_transform = createGroundProjectedTransform(transform, target_frame);
@@ -1612,12 +1638,9 @@ void TagPicker::createCollisionObjectsAtPinkyBagPoses(int source_tag_id)
             geometry_msgs::msg::TransformStamped transform = 
                 tf_buffer_->lookupTransform("base_link", frame_name, tf2::TimePointZero, tf2::durationFromSec(1.0));
             
-            // Convert transform to pose
-            geometry_msgs::msg::Pose pose;
-            pose.position.x = transform.transform.translation.x;
-            pose.position.y = transform.transform.translation.y;
-            pose.position.z = transform.transform.translation.z - 0.003;
-            pose.orientation = transform.transform.rotation;
+            // Create ground-projected pose (parallel to ground plane) for the bag collision
+            geometry_msgs::msg::Pose pose = createGroundProjectedPose(transform);
+            pose.position.z = transform.transform.translation.z - 0.003; // Adjust Z position
             
             // Create box collision object (representing pinky bag dimensions)
             // Typical pinky bag dimensions: 0.2m x 0.15m x 0.1m (length x width x height)
@@ -1628,12 +1651,12 @@ void TagPicker::createCollisionObjectsAtPinkyBagPoses(int source_tag_id)
 
             geometry_msgs::msg::TransformStamped transform_base = 
                 tf_buffer_->lookupTransform("base_link", base_frame_name, tf2::TimePointZero, tf2::durationFromSec(1.0));
-            // Create base collision object at offset (0.108, 0.000, -0.018)
-            geometry_msgs::msg::Pose base_pose;
+            
+            // Create ground-projected pose for the base collision
+            geometry_msgs::msg::Pose base_pose = createGroundProjectedPose(transform_base);
             base_pose.position.x = transform_base.transform.translation.x - 0.005;
             base_pose.position.y = transform_base.transform.translation.y;
             base_pose.position.z = transform_base.transform.translation.z + 0.105/2 - 0.03;
-            base_pose.orientation = transform_base.transform.rotation;
 
             std::string base_collision_id = collision_id + "_base_collision";
             std::vector<double> base_dimensions = {0.125, 0.12, 0.105};
@@ -1641,11 +1664,11 @@ void TagPicker::createCollisionObjectsAtPinkyBagPoses(int source_tag_id)
             
             collision_objects.push_back(base_collision_object);
             
-            geometry_msgs::msg::Pose lidar_pose;
+            // Create ground-projected pose for the lidar collision
+            geometry_msgs::msg::Pose lidar_pose = createGroundProjectedPose(transform_base);
             lidar_pose.position.x = transform_base.transform.translation.x;
             lidar_pose.position.y = transform_base.transform.translation.y;
             lidar_pose.position.z = base_pose.position.z + 0.105/2 + 0.04/2;
-            lidar_pose.orientation = transform_base.transform.rotation;
 
             std::string lidar_collision_id = collision_id + "_lidar_collision";
             std::vector<double> lidar_dimensions = {0.05, 0.05, 0.04};
