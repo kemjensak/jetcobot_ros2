@@ -57,10 +57,10 @@ private:
         static constexpr double APPROACH_HEIGHT = 0.05;    // 5cm above tag
         static constexpr double CAM_HEIGHT = 0.09;         // 9cm above TCP
         static constexpr double PICK_HEIGHT = -0.01;       // 1cm below tag surface
-        static constexpr double LIFT_HEIGHT = 0.04;        // 3cm lift
+        static constexpr double LIFT_HEIGHT = 0.06;        // 3cm lift
         static constexpr double PLACE_HEIGHT = 0.025;      // 2.5cm above tag for placing
         static constexpr double EEF_STEP = 0.001;          // End effector step size
-        static constexpr double MIN_PATH_FRACTION = 0.5;   // Minimum path fraction for Cartesian planning
+        static constexpr double MIN_PATH_FRACTION = 0.3;   // Minimum path fraction for Cartesian planning
         
         // Safety distances
         static constexpr double MIN_DISTANCE_TO_BASE = 0.001;  // 1mm minimum distance to base for calculations
