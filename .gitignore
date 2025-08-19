@@ -53,3 +53,4 @@ CATKIN_IGNORE
 .vscode/
 
 log/
+jetcobot_bringup/config/camera_info_publisher.yaml
