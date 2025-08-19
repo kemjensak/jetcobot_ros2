@@ -69,6 +69,26 @@ def generate_launch_description():
         ],
     )
 
+    pinky_tf_publisher = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource([
+            PathJoinSubstitution([
+                FindPackageShare('jetcobot_bringup'),
+                'launch',
+                'pinky_tf_publisher.launch.py'
+            ])
+        ])
+    )
+
+    ground_tf_publisher = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource([
+            PathJoinSubstitution([
+                FindPackageShare('jetcobot_moveit_picker'),
+                'launch',
+                'loadpoint_publisher.launch.py'
+            ])
+        ])
+    )
+
     return LaunchDescription(
         [
             joint_control_node,
@@ -76,5 +96,7 @@ def generate_launch_description():
             camera_info_launch,
             moveit_demo_launch,
             apriltag_ros_node,
+            pinky_tf_publisher,
+            ground_tf_publisher
         ]
     )

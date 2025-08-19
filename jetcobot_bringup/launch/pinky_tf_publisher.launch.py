@@ -15,129 +15,108 @@ def generate_launch_description():
     LOADPOINT_Y_OFFSET = 0.039     # 39mm
     LOADPOINT_Z_OFFSET = 0.0      # 0mm
     
-    # Declare launch arguments
-    namespace_arg = DeclareLaunchArgument(
-        'namespace',
-        default_value='',
-        description='Namespace for the robot (e.g., pinky1, pinky2)'
-    )
-    
-    # Get launch configurations
-    namespace = LaunchConfiguration('namespace')
-    
-    # Create frame names with namespace prefix
-    pinky_bag_frame = PythonExpression([
-        "'", namespace, "/pinky_bag_projected' if '", namespace, "' != '' else 'pinky_bag_projected'"
-    ])
-    
-    fl_loadpoint_frame = PythonExpression([
-        "'", namespace, "/fl' if '", namespace, "' != '' else 'fl_loadpoint'"
-    ])
-    
-    fr_loadpoint_frame = PythonExpression([
-        "'", namespace, "/fr' if '", namespace, "' != '' else 'fr_loadpoint'"
-    ])
-    
-    rr_loadpoint_frame = PythonExpression([
-        "'", namespace, "/rr' if '", namespace, "' != '' else 'rr_loadpoint'"
-    ])
-    
-    rl_loadpoint_frame = PythonExpression([
-        "'", namespace, "/rl' if '", namespace, "' != '' else 'rl_loadpoint'"
-    ])
-
-    base_link_frame = PythonExpression([
-        "'", namespace, "/base_link' if '", namespace, "' != '' else 'base_link'"
-    ])
+    # Define pinky namespaces
+    pinky_namespaces = ['pinky1', 'pinky2', 'pinky3']
     
     # Get package share directory
     pkg_share = FindPackageShare('pinky_description')
     
-    # Robot description from xacro file
-    robot_description = ParameterValue(
-        Command([
-            'xacro ',
-            pkg_share, '/urdf/robot_core.xacro',
-            ' namespace:=', namespace
-        ])
-    )
+    # List to store all nodes
+    nodes = []
     
-    # Robot state publisher with conditional namespace
-    robot_state_publisher_node = Node(
-        package='robot_state_publisher',
-        executable='robot_state_publisher',
-        name='robot_state_publisher',
-        namespace=namespace,
-        output='screen',
-        parameters=[{'robot_description': robot_description}]
-    )
-    
-    # Joint state publisher GUI with conditional namespace
-    joint_state_publisher_gui_node = Node(
-        package='joint_state_publisher_gui',
-        executable='joint_state_publisher_gui',
-        name='joint_state_publisher',
-        namespace=namespace,
-        output='screen'
-    )
-    
-    # Static TF publishers for road points relative to pinky_bag
-    # FL: Front Left (+x, +y)
-    fl_loadpoint_tf = Node(
-        package='tf2_ros',
-        executable='static_transform_publisher',
-        name='fl_loadpoint_tf_publisher',
-        namespace=namespace,
-        arguments=[str(LOADPOINT_X_OFFSET), str(LOADPOINT_Y_OFFSET), str(LOADPOINT_Z_OFFSET), 
-                  '0', '0', '0', pinky_bag_frame, fl_loadpoint_frame]
-    )
-    
-    # FR: Front Right (+x, -y)
-    fr_loadpoint_tf = Node(
-        package='tf2_ros',
-        executable='static_transform_publisher',
-        name='fr_loadpoint_tf_publisher',
-        namespace=namespace,
-        arguments=[str(LOADPOINT_X_OFFSET), str(-LOADPOINT_Y_OFFSET), str(LOADPOINT_Z_OFFSET), 
-                  '0', '0', '0', pinky_bag_frame, fr_loadpoint_frame]
-    )
-    
-    # RR: Rear Right (-x, -y)
-    rr_loadpoint_tf = Node(
-        package='tf2_ros',
-        executable='static_transform_publisher',
-        name='rr_loadpoint_tf_publisher',
-        namespace=namespace,
-        arguments=[str(-LOADPOINT_X_OFFSET), str(-LOADPOINT_Y_OFFSET), str(LOADPOINT_Z_OFFSET), 
-                  '0', '0', '0', pinky_bag_frame, rr_loadpoint_frame]
-    )
-    
-    # RL: Rear Left (-x, +y)
-    rl_loadpoint_tf = Node(
-        package='tf2_ros',
-        executable='static_transform_publisher',
-        name='rl_loadpoint_tf_publisher',
-        namespace=namespace,
-        arguments=[str(-LOADPOINT_X_OFFSET), str(LOADPOINT_Y_OFFSET), str(LOADPOINT_Z_OFFSET), 
-                  '0', '0', '0', pinky_bag_frame, rl_loadpoint_frame]
-    )
+    # Create nodes for each pinky namespace
+    for namespace in pinky_namespaces:
+        # Create frame names with namespace prefix
+        pinky_bag_frame = f"{namespace}/pinky_bag_projected"
+        fl_loadpoint_frame = f"{namespace}/fl_loadpoint"
+        fr_loadpoint_frame = f"{namespace}/fr_loadpoint"
+        rr_loadpoint_frame = f"{namespace}/rr_loadpoint"
+        rl_loadpoint_frame = f"{namespace}/rl_loadpoint"
+        base_link_frame = f"{namespace}/base_link"
+        
+        # Robot description from xacro file
+        robot_description = ParameterValue(
+            Command([
+                'xacro ',
+                pkg_share, '/urdf/robot_core.xacro',
+                f' namespace:={namespace}'
+            ])
+        )
+        
+        # Robot state publisher with namespace
+        robot_state_publisher_node = Node(
+            package='robot_state_publisher',
+            executable='robot_state_publisher',
+            name='robot_state_publisher',
+            namespace=namespace,
+            output='screen',
+            parameters=[{'robot_description': robot_description}]
+        )
+        
+        # Static TF publishers for road points relative to pinky_bag
+        # FL: Front Left (+x, +y)
+        fl_loadpoint_tf = Node(
+            package='tf2_ros',
+            executable='static_transform_publisher',
+            name='fl_loadpoint_tf_publisher',
+            namespace=namespace,
+            arguments=['--x', str(LOADPOINT_X_OFFSET), '--y', str(LOADPOINT_Y_OFFSET), '--z', str(LOADPOINT_Z_OFFSET),
+                      '--roll', '0', '--pitch', '0', '--yaw', '0',
+                      '--frame-id', pinky_bag_frame, '--child-frame-id', fl_loadpoint_frame]
+        )
+        
+        # FR: Front Right (+x, -y)
+        fr_loadpoint_tf = Node(
+            package='tf2_ros',
+            executable='static_transform_publisher',
+            name='fr_loadpoint_tf_publisher',
+            namespace=namespace,
+            arguments=['--x', str(LOADPOINT_X_OFFSET), '--y', str(-LOADPOINT_Y_OFFSET), '--z', str(LOADPOINT_Z_OFFSET),
+                      '--roll', '0', '--pitch', '0', '--yaw', '0',
+                      '--frame-id', pinky_bag_frame, '--child-frame-id', fr_loadpoint_frame]
+        )
+        
+        # RR: Rear Right (-x, -y)
+        rr_loadpoint_tf = Node(
+            package='tf2_ros',
+            executable='static_transform_publisher',
+            name='rr_loadpoint_tf_publisher',
+            namespace=namespace,
+            arguments=['--x', str(-LOADPOINT_X_OFFSET), '--y', str(-LOADPOINT_Y_OFFSET), '--z', str(LOADPOINT_Z_OFFSET),
+                      '--roll', '0', '--pitch', '0', '--yaw', '0',
+                      '--frame-id', pinky_bag_frame, '--child-frame-id', rr_loadpoint_frame]
+        )
+        
+        # RL: Rear Left (-x, +y)
+        rl_loadpoint_tf = Node(
+            package='tf2_ros',
+            executable='static_transform_publisher',
+            name='rl_loadpoint_tf_publisher',
+            namespace=namespace,
+            arguments=['--x', str(-LOADPOINT_X_OFFSET), '--y', str(LOADPOINT_Y_OFFSET), '--z', str(LOADPOINT_Z_OFFSET),
+                      '--roll', '0', '--pitch', '0', '--yaw', '0',
+                      '--frame-id', pinky_bag_frame, '--child-frame-id', rl_loadpoint_frame]
+        )
 
-    pinky_base_tf = Node(
-        package='tf2_ros',
-        executable='static_transform_publisher',
-        name='pinky_base_tf_publisher',
-        namespace=namespace,
-        arguments=['0.108', '0.000', '-0.018',
-                  '0', '0', '0', pinky_bag_frame, base_link_frame]
-    )
+        # Pinky base TF publisher
+        pinky_base_tf = Node(
+            package='tf2_ros',
+            executable='static_transform_publisher',
+            name='pinky_base_tf_publisher',
+            namespace=namespace,
+            arguments=['--x', '0.108', '--y', '0.000', '--z', '-0.018',
+                      '--roll', '0', '--pitch', '0', '--yaw', '0',
+                      '--frame-id', pinky_bag_frame, '--child-frame-id', base_link_frame]
+        )
+        
+        # Add all nodes for this namespace to the list
+        nodes.extend([
+            robot_state_publisher_node,
+            fl_loadpoint_tf,
+            fr_loadpoint_tf,
+            rr_loadpoint_tf,
+            rl_loadpoint_tf,
+            pinky_base_tf,
+        ])
     
-    return LaunchDescription([
-        namespace_arg,
-        robot_state_publisher_node,
-        # joint_state_publisher_gui_node,
-        fl_loadpoint_tf,
-        fr_loadpoint_tf,
-        rr_loadpoint_tf,
-        rl_loadpoint_tf,
-        pinky_base_tf,
-    ])
+    return LaunchDescription(nodes)
