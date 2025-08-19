@@ -1644,7 +1644,7 @@ void TagPicker::createCollisionObjectsAtPinkyBagPoses(int source_tag_id)
         try {
             // Get the current transform for the pinky bag frame
             geometry_msgs::msg::TransformStamped transform = 
-                tf_buffer_->lookupTransform("base_link", frame_name, tf2::TimePointZero, tf2::durationFromSec(1.0));
+                tf_buffer_->lookupTransform("world", frame_name, tf2::TimePointZero, tf2::durationFromSec(1.0));
             
             // Convert transform to pose
             geometry_msgs::msg::Pose pose;
