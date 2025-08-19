@@ -32,7 +32,7 @@ def generate_launch_description():
         fr_loadpoint_frame = f"{namespace}/fr"
         rr_loadpoint_frame = f"{namespace}/rr"
         rl_loadpoint_frame = f"{namespace}/rl"
-        base_link_frame = f"{namespace}/base_link"
+        base_link_frame = f"{namespace}/base_footprint"
         
         # Robot description from xacro file
         robot_description = ParameterValue(
@@ -104,7 +104,7 @@ def generate_launch_description():
             executable='static_transform_publisher',
             name='pinky_base_tf_publisher',
             namespace=namespace,
-            arguments=['--x', '0.108', '--y', '0.000', '--z', '-0.018',
+            arguments=['--x', '0.108', '--y', '0.000', '--z', '-0.048',
                       '--roll', '0', '--pitch', '0', '--yaw', '0',
                       '--frame-id', pinky_bag_frame, '--child-frame-id', base_link_frame]
         )
