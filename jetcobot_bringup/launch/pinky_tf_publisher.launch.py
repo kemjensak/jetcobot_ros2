@@ -28,10 +28,10 @@ def generate_launch_description():
     for namespace in pinky_namespaces:
         # Create frame names with namespace prefix
         pinky_bag_frame = f"{namespace}/pinky_bag_projected"
-        fl_loadpoint_frame = f"{namespace}/fl_loadpoint"
-        fr_loadpoint_frame = f"{namespace}/fr_loadpoint"
-        rr_loadpoint_frame = f"{namespace}/rr_loadpoint"
-        rl_loadpoint_frame = f"{namespace}/rl_loadpoint"
+        fl_loadpoint_frame = f"{namespace}/fl"
+        fr_loadpoint_frame = f"{namespace}/fr"
+        rr_loadpoint_frame = f"{namespace}/rr"
+        rl_loadpoint_frame = f"{namespace}/rl"
         base_link_frame = f"{namespace}/base_link"
         
         # Robot description from xacro file
