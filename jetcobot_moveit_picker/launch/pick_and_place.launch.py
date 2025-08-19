@@ -22,12 +22,5 @@ def generate_launch_description():
                 output="screen",
                 parameters=[moveit_config.to_dict()],
             ),
-            
-            Node(
-                package="jetcobot_moveit_picker",
-                executable="loadpoint_publisher",
-                name="loadpoint_publisher",
-                output="log",
-            ),
         ]
     )
