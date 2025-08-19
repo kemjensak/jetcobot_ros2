@@ -340,10 +340,18 @@ void TagPicker::PublishBoxCollisionObject()
         collision_object.primitives        = {box};
 
         geometry_msgs::msg::Pose box_pose;
-        box_pose.position.x      = tf.transform.translation.x;
-        box_pose.position.y      = tf.transform.translation.y;
-        box_pose.position.z      = tf.transform.translation.z - box.dimensions[2]/2.0; // 태그가 박스 맨 위 중앙에 있다고 가정
-        box_pose.orientation     = tf.transform.rotation;     // 태그와 동일 방향
+        
+        // Create a temporary transform for ground projection
+        geometry_msgs::msg::TransformStamped temp_transform;
+        temp_transform.transform = tf.transform;
+        
+        // Apply ground projection to make collision box parallel to ground plane
+        geometry_msgs::msg::Pose projected_pose = createGroundProjectedPose(temp_transform);
+        
+        box_pose.position.x      = projected_pose.position.x;
+        box_pose.position.y      = projected_pose.position.y;
+        box_pose.position.z      = projected_pose.position.z - box.dimensions[2]/2.0; // 태그가 박스 맨 위 중앙에 있다고 가정
+        box_pose.orientation     = projected_pose.orientation;     // Use ground-projected orientation
 
         collision_object.primitive_poses   = {box_pose};
 
@@ -1342,12 +1350,12 @@ bool TagPicker::handleClearPinkyCommand(const std::shared_ptr<GoalHandlePickerAc
         "pinky1_bag_collision",
         "pinky2_bag_collision", 
         "pinky3_bag_collision",
-        "pinky1_base_collision",
-        "pinky2_base_collision",
-        "pinky3_base_collision",
-        "pinky1_lidar_collision",
-        "pinky2_lidar_collision",
-        "pinky3_lidar_collision"
+        "pinky1_bag_collision_base_collision",
+        "pinky2_bag_collision_base_collision",
+        "pinky3_bag_collision_base_collision",
+        "pinky1_bag_collision_lidar_collision",
+        "pinky2_bag_collision_lidar_collision",
+        "pinky3_bag_collision_lidar_collision"
     };
     
     planning_scene_interface_->removeCollisionObjects(collision_ids_to_remove);

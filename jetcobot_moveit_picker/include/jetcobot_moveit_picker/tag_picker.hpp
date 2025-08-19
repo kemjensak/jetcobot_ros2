@@ -194,6 +194,13 @@ private:
         const std::string& output_frame_id);
 
     /**
+     * @brief Create a ground-projected pose from a transform (parallel to ground plane)
+     * @param transform Input transform to project
+     * @return Ground-projected pose with only yaw rotation
+     */
+    geometry_msgs::msg::Pose createGroundProjectedPose(const geometry_msgs::msg::TransformStamped& transform);
+
+    /**
      * @brief Convert quaternion to euler angles
      * @param x Quaternion x component
      * @param y Quaternion y component  
