@@ -27,18 +27,17 @@ def generate_launch_description():
         output="screen"
     )
 
-    # Include camera_info_publisher launch file
-    camera_info_launch = IncludeLaunchDescription(
+    # Include jetcobot_moveit_config demo.launch.py with use_rviz=false
+    moveit_demo_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource([
             PathJoinSubstitution([
-                FindPackageShare('jetcobot_bringup'),
+                FindPackageShare('jetcobot_moveit_config'),
                 'launch',
-                'camera_info_publisher.launch.py'
+                'demo.launch.py'
             ])
         ]),
         launch_arguments={
-            'camera_name': 'ov3360',
-            'frame_id': 'ov3360'
+            'use_rviz': 'false'
         }.items()
     )
 
@@ -46,5 +45,6 @@ def generate_launch_description():
         [
             joint_control_node,
             joint_state_switcher_node,
+            moveit_demo_launch,
         ]
     )
