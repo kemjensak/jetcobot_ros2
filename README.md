@@ -6,6 +6,9 @@
 
 JetCobot is a comprehensive ROS2 package suite for controlling a 6-DOF robotic arm with gripper functionality, camera integration, and advanced motion planning capabilities using MoveIt2.
 
+### For korean
+이 패키지는 'ROS2와 AI를 활용한 자율주행&로봇팔 개발자 양성과정' 5회차 과정, [Team BOLT의 결과물](https://github.com/addinedu-roscamp-5th/roscamp-repo-2) 일부로, jetcobot을 Moveit으로 제어하기 위해 제작하였습니다. 추후 해당 과정을 수강하실 분들께 도움이 되길 바라며, 궁금한 점이 있으시다면 이메일로 편하게 연락주시기 바랍니다.   
+
 ## 🚀 Features
 
 - **6-DOF Robotic Arm Control**: Full kinematic control of a 6-axis robotic arm
@@ -125,17 +128,6 @@ The robot comes with several predefined poses that can be used with MoveIt2:
 - **scan_left**: Left scanning position
 - **scan_right**: Right scanning position
 
-### Camera Integration
-
-The system supports multiple cameras with calibration:
-```bash
-# Launch camera info publisher
-ros2 launch jetcobot_bringup camera_info_publisher.launch.py camera_name:=ov3360 frame_id:=ov3360
-```
-
-Supported camera configurations:
-- `jetcocam_1_calib.yaml` / `jetcocam_2_calib.yaml`
-- `ov3360_1_calib.yaml` / `ov3360_2_calib.yaml` / `ov3360_3_calib.yaml`
 
 ## 🔧 Configuration
 
@@ -189,36 +181,6 @@ Camera calibration files are stored in `jetcobot_bringup/config/`:
 - **Move Group Planning**: Standard MoveIt2 planning services
 - **Controller Management**: ROS2 controller lifecycle services
 
-## 🤖 Hardware Integration
-
-This package is designed to work with MyCobot280 robot arm:
-
-1. **Connection**: Ensure proper USB/Serial connection to the robot
-2. **Permissions**: Grant appropriate permissions to the serial port:
-   ```bash
-   sudo usermod -a -G dialout $USER
-   # Logout and login again
-   ```
-3. **Firmware**: Ensure the robot firmware is compatible with pymycobot
-
-## 🐛 Troubleshooting
-
-### Common Issues
-
-1. **Robot not responding**:
-   - Check USB connection and permissions
-   - Verify pymycobot installation
-   - Check if robot is in proper mode
-
-2. **MoveIt2 planning failures**:
-   - Verify joint limits configuration
-   - Check for collisions in the planning scene
-   - Ensure start state is valid
-
-3. **Camera calibration issues**:
-   - Verify camera calibration file paths
-   - Check camera permissions and drivers
-
 ### Debug Commands
 
 ```bash
@@ -238,7 +200,7 @@ ros2 topic echo /move_group/display_planned_path
 
 ## 👥 Maintainers
 
-- **Jinseok Kim** - *Lead Developer* - [jinseok.kim970@gmail.com](mailto:jinseok.kim970@gmail.com)
+- **Jinseok Kim**  - [jinseok.kim970@gmail.com](mailto:jinseok.kim970@gmail.com)
 
 ## 🙏 Acknowledgments
 
